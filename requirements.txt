@@ -1,0 +1,11 @@
+# Image Base64 Converter Requirements
+
+# Core dependencies
+Pillow>=9.0.0  # For image processing
+Flask>=2.0.0   # For web UI
+Werkzeug>=2.0.0  # Flask dependency
+
+# Development dependencies (optional)
+# pytest>=7.0.0  # For running tests
+# black>=22.0.0  # For code formatting
+# flake8>=4.0.0  # For linting
