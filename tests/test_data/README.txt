@@ -1,1 +1,0 @@
-This is a readme file and should be ignored during scanning
