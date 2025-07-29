@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from models import (
+from ..models.models import (
     ImageConverterError,
     FileNotFoundError,
     PermissionError

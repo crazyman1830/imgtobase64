@@ -5,9 +5,9 @@ import argparse
 import sys
 from typing import Optional
 
-from converter import ImageConverter
-from file_handler import FileHandler
-from models import ImageConverterError
+from .core.converter import ImageConverter
+from .core.file_handler import FileHandler
+from .models.models import ImageConverterError
 
 
 class CLI:

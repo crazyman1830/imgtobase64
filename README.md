@@ -1,84 +1,363 @@
 # Image Base64 Converter
 
-이미지 파일을 Base64 형식으로 변환하는 Python 도구입니다. 웹 UI와 명령줄 인터페이스를 모두 제공합니다.
+A comprehensive Python tool for converting images to/from Base64 format with advanced processing capabilities. Provides both web UI and command-line interfaces for maximum flexibility.
 
-## 주요 기능
+## 🚀 Key Features
 
-- **다양한 이미지 형식 지원**: PNG, JPG, JPEG, GIF, BMP, WEBP
-- **양방향 변환**: 이미지 ↔ Base64 상호 변환
-- **웹 UI**: 드래그 앤 드롭으로 쉬운 변환
-- **명령줄 도구**: 배치 처리 및 자동화 지원
-- **원클릭 복사**: Base64 데이터를 클립보드에 바로 복사
+### Core Functionality
+- **Multi-format Support**: PNG, JPG, JPEG, GIF, BMP, WEBP, TIFF, ICO
+- **Bidirectional Conversion**: Image ↔ Base64 with full fidelity
+- **Advanced Processing**: Resize, rotate, flip, compress, and format conversion
+- **Batch Processing**: Handle multiple files simultaneously with progress tracking
 
-## 설치 및 실행
+### User Experience
+- **Modern Web UI**: Drag & drop interface with real-time preview
+- **Command Line Tool**: Perfect for automation and batch processing
+- **Real-time Progress**: WebSocket-powered live updates during processing
+- **One-click Copy**: Base64 data directly to clipboard
 
-**Windows 사용자 (추천)**
-1. `install_dependencies.bat` 더블클릭 - 의존성 자동 설치
-2. `run_web.bat` 더블클릭 - 웹 UI 실행
-3. 브라우저에서 http://localhost:5000 접속
+### Performance & Security
+- **Intelligent Caching**: Avoid redundant processing with smart caching
+- **Memory Optimization**: Handle large files efficiently with streaming
+- **Security Validation**: Comprehensive file security scanning
+- **Parallel Processing**: Multi-threaded processing for better performance
 
-**수동 설치**
+### Advanced Features
+- **Image Editing**: Basic editing operations (rotate, flip, resize)
+- **Quality Control**: Adjustable compression and quality settings
+- **Format Conversion**: Convert between different image formats
+- **Processing History**: Track and reuse previous conversions
+
+## 📦 Installation & Setup
+
+### Quick Start (Windows - Recommended)
+1. **Install Dependencies**: Double-click `install_dependencies.bat`
+2. **Launch Web UI**: Double-click `run_web.bat`
+3. **Access Application**: Open http://localhost:5000 in your browser
+
+### Manual Installation
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd image-base64-converter
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Launch web application
 python run_web.py
+
+# Or use CLI
+python main.py image.png
 ```
 
-**필요 환경**: Python 3.6 이상
+### System Requirements
+- **Python**: 3.7 or higher
+- **Memory**: 2GB RAM minimum (4GB recommended for large files)
+- **Storage**: 100MB for application + cache space
+- **OS**: Windows, macOS, Linux
 
-## 사용법
+### Dependencies
+- **PIL/Pillow**: Image processing
+- **Flask**: Web framework
+- **Flask-SocketIO**: Real-time communication
+- **psutil**: System monitoring
+- **Additional**: See `requirements.txt` for complete list
 
-### 웹 UI (추천)
-1. `run_web.bat` 실행 또는 `python run_web.py`
-2. 브라우저에서 http://localhost:5000 접속
-3. 이미지 파일을 드래그 앤 드롭하여 Base64로 변환
-4. Base64 텍스트를 입력하여 이미지로 변환
+## 🎯 Usage Guide
 
-### 명령줄 도구
+### Web Interface (Recommended)
+
+#### Basic Conversion
+1. **Launch**: Run `run_web.bat` or `python run_web.py`
+2. **Access**: Open http://localhost:5000 in your browser
+3. **Convert**: Drag & drop images or click to select files
+4. **Copy**: Click the copy button to get Base64 data
+
+#### Advanced Processing
+1. **Select Options**: Choose resize, quality, format, and rotation settings
+2. **Preview**: See before/after comparison
+3. **Batch Process**: Select multiple files for simultaneous processing
+4. **Monitor Progress**: Watch real-time progress with WebSocket updates
+
+#### Features Available in Web UI
+- **Image Editing**: Resize, rotate, flip, and compress images
+- **Format Conversion**: Convert between PNG, JPEG, WEBP, etc.
+- **Quality Control**: Adjust compression levels and quality
+- **Batch Operations**: Process multiple files with progress tracking
+- **History**: View and reuse previous conversions
+- **Cache Management**: Monitor and clear cache as needed
+
+### Command Line Interface
+
+#### Basic Usage
 ```bash
-# 단일 파일 변환
+# Convert single image
 python main.py image.png
 
-# 파일로 저장
+# Save to file
 python main.py image.png -o output.txt
 
-# 디렉토리 배치 처리
-python main.py /path/to/images/
+# Batch process directory
+python main.py /path/to/images/ -o /path/to/output/
 
-# 또는 run_cli.bat 사용 (Windows)
+# Windows batch file
+run_cli.bat
 ```
 
-## 출력 형식
+#### Advanced CLI Options
+```bash
+# Resize image during conversion
+python main.py image.png --width 800 --height 600
 
-변환된 결과는 Data URI 형식으로 출력됩니다:
+# Set quality and format
+python main.py image.png --quality 90 --format JPEG
+
+# Rotate and flip
+python main.py image.png --rotate 90 --flip horizontal
+
+# Enable caching
+python main.py image.png --cache --cache-dir ./cache
+
+# Security scan
+python main.py image.png --security-scan
+
+# Verbose output
+python main.py image.png --verbose
+```
+
+### API Integration
+
+#### REST API
+```python
+import requests
+
+# Basic conversion
+files = {'file': open('image.png', 'rb')}
+response = requests.post('http://localhost:5000/api/convert/to-base64', files=files)
+result = response.json()
+
+# Advanced processing
+options = {
+    'resize_width': 800,
+    'quality': 90,
+    'target_format': 'JPEG'
+}
+data = {'options': json.dumps(options)}
+response = requests.post('http://localhost:5000/api/convert/to-base64-advanced', 
+                        files=files, data=data)
+```
+
+#### WebSocket Integration
+```javascript
+const socket = io();
+
+// Join queue for updates
+socket.emit('join_queue', {queue_id: 'your-queue-id'});
+
+// Listen for progress
+socket.on('batch_progress', (data) => {
+    console.log(`Progress: ${data.progress_percentage}%`);
+});
+```
+
+## 📋 Output Formats & Examples
+
+### Data URI Format
+The converted result is output in Data URI format, ready for immediate use:
 ```
 data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
 ```
 
-HTML에서 바로 사용 가능:
+### Usage Examples
+
+#### HTML Integration
 ```html
-<img src="data:image/png;base64,..." alt="이미지">
+<img src="data:image/png;base64,..." alt="Converted Image">
+<div style="background-image: url('data:image/jpeg;base64,...')"></div>
 ```
 
-## 지원 형식
+#### CSS Integration
+```css
+.background {
+    background-image: url('data:image/webp;base64,...');
+}
+```
 
-PNG, JPG, JPEG, GIF, BMP, WEBP
+#### JavaScript Integration
+```javascript
+const img = new Image();
+img.src = 'data:image/png;base64,...';
+document.body.appendChild(img);
+```
 
-## 프로젝트 구조
+## 🎨 Supported Formats
+
+### Input Formats
+- **PNG**: Lossless compression, transparency support
+- **JPEG/JPG**: Lossy compression, smaller file sizes
+- **WEBP**: Modern format, excellent compression
+- **GIF**: Animation support, limited colors
+- **BMP**: Uncompressed, large file sizes
+- **TIFF**: High quality, multiple pages
+- **ICO**: Icon format, multiple sizes
+
+### Output Formats
+All input formats plus optimized variants:
+- **PNG**: Optimized compression levels
+- **JPEG**: Quality control (1-100)
+- **WEBP**: Advanced compression options
+- **Format Conversion**: Convert between any supported formats
+
+### Processing Capabilities
+- **Resize**: Maintain aspect ratio or custom dimensions
+- **Rotate**: 90°, 180°, 270° rotations
+- **Flip**: Horizontal and vertical flipping
+- **Compress**: Quality adjustment and optimization
+- **Convert**: Change format while processing
+
+## 📁 Project Structure
 
 ```
 image-base64-converter/
-├── src/                    # 소스 코드
-│   ├── converter.py        # 핵심 변환 로직
-│   ├── web_app.py         # Flask 웹 애플리케이션
-│   ├── cli.py             # 명령줄 인터페이스
-│   └── templates/         # HTML 템플릿
-├── main.py                # CLI 진입점
-├── run_web.py            # 웹 서버 실행
-├── install_dependencies.bat  # 의존성 설치 (Windows)
-├── run_web.bat           # 웹 UI 실행 (Windows)
-└── run_cli.bat           # CLI 실행 (Windows)
+├── src/                           # Source code
+│   ├── core/                      # Core processing modules
+│   │   ├── converter.py           # Main conversion logic
+│   │   ├── image_processor.py     # Advanced image processing
+│   │   ├── multi_file_handler.py  # Batch processing
+│   │   ├── cache_manager.py       # Caching system
+│   │   ├── security_validator.py  # Security validation
+│   │   ├── memory_optimizer.py    # Memory optimization
+│   │   ├── parallel_processor.py  # Parallel processing
+│   │   └── rate_limiter.py        # Rate limiting
+│   ├── web/                       # Web application
+│   │   ├── web_app.py            # Flask application
+│   │   └── async_handler.py      # Async processing
+│   ├── models/                    # Data models
+│   │   ├── models.py             # Core models
+│   │   └── processing_options.py # Processing options
+│   ├── utils/                     # Utilities
+│   │   └── utils.py              # Helper functions
+│   ├── templates/                 # HTML templates
+│   │   └── index.html            # Main web interface
+│   └── static/                    # Static assets
+│       ├── js/                   # JavaScript files
+│       └── css/                  # Stylesheets
+├── tests/                         # Test suite
+│   ├── test_image_processor.py   # Image processing tests
+│   ├── test_multi_file_handler.py # Batch processing tests
+│   ├── test_cache_manager.py     # Cache tests
+│   ├── test_security_validator.py # Security tests
+│   └── test_integration.py       # Integration tests
+├── logs/                          # Application logs
+├── cache/                         # Cache directory
+├── main.py                        # CLI entry point
+├── run_web.py                     # Web server launcher
+├── requirements.txt               # Python dependencies
+├── install_dependencies.bat       # Windows installer
+├── run_web.bat                   # Windows web launcher
+├── run_cli.bat                   # Windows CLI launcher
+├── API_ENDPOINTS.md              # API documentation
+└── README.md                     # This file
 ```
 
-## 라이선스
+## 🔧 Configuration
 
-MIT License
+### Environment Variables
+```bash
+# Cache settings
+CACHE_DIR=./cache
+CACHE_MAX_SIZE_MB=100
+CACHE_MAX_AGE_HOURS=24
+
+# Security settings
+MAX_FILE_SIZE_MB=10
+ENABLE_SECURITY_SCAN=true
+RATE_LIMIT_REQUESTS_PER_MINUTE=60
+
+# Performance settings
+MAX_CONCURRENT_PROCESSING=3
+ENABLE_MEMORY_OPTIMIZATION=true
+PARALLEL_PROCESSING_WORKERS=4
+```
+
+### Configuration Files
+- **Cache**: Automatic cache management with configurable limits
+- **Security**: Customizable security policies and validation rules
+- **Performance**: Adjustable concurrency and memory settings
+- **Logging**: Structured logging with multiple levels
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Run all tests
+python -m pytest tests/
+
+# Run specific test category
+python -m pytest tests/test_image_processor.py
+
+# Run with coverage
+python -m pytest tests/ --cov=src/
+
+# Performance benchmarks
+python performance_demo.py
+```
+
+### Test Categories
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: End-to-end workflow testing
+- **Performance Tests**: Load and stress testing
+- **Security Tests**: Vulnerability and validation testing
+
+## 🚀 Deployment
+
+### Production Considerations
+- **Security**: Implement authentication and authorization
+- **Scaling**: Use load balancers and multiple instances
+- **Monitoring**: Set up logging and performance monitoring
+- **Caching**: Configure Redis or similar for distributed caching
+
+### Docker Deployment
+```dockerfile
+FROM python:3.9-slim
+COPY . /app
+WORKDIR /app
+RUN pip install -r requirements.txt
+EXPOSE 5000
+CMD ["python", "run_web.py"]
+```
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Setup
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests before committing
+python -m pytest tests/
+
+# Format code
+black src/ tests/
+
+# Lint code
+flake8 src/ tests/
+```
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Pillow**: Python Imaging Library for image processing
+- **Flask**: Lightweight web framework
+- **Socket.IO**: Real-time communication
+- **Contributors**: Thanks to all contributors who helped improve this project

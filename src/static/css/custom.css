@@ -34,3 +34,387 @@
 .base64-output::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* 이미지 처리 옵션 스타일 */
+#processingOptions {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#processingOptions .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#processingOptions .card-header h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+#processingOptions .btn-group .btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+#processingOptions .btn-group .btn.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: #007bff;
+}
+
+.form-range::-moz-range-thumb {
+    background-color: #007bff;
+    border: none;
+}
+
+#processingOptions h6 {
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#processingOptions h6 i {
+    color: #6c757d;
+    margin-right: 0.5rem;
+}
+
+#compressionLevel {
+    font-weight: 500;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.btn-outline-secondary.active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* 다중 파일 처리 스타일 */
+.file-item {
+    transition: background-color 0.2s ease;
+}
+
+.file-item:hover {
+    background-color: #f8f9fa;
+}
+
+#fileListContainer {
+    background-color: #fafafa;
+}
+
+#fileListContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+#fileListContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#fileListContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#fileListContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.progress {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+#batchResults .table {
+    font-size: 0.9rem;
+}
+
+#batchResults .card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.file-item .btn-outline-danger {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.file-item:hover .btn-outline-danger {
+    opacity: 1;
+}
+
+/* 탭 스타일 개선 */
+.nav-tabs .nav-link {
+    border-radius: 8px 8px 0 0;
+    margin-right: 2px;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+/* 다중 파일 드롭존 스타일 */
+#multiDropZone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+#multiDropZone:hover, #multiDropZone.dragover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+/* 이미지 비교 미리보기 스타일 */
+#imageComparison .preview-image {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#imageComparison .card-body {
+    padding: 1.5rem;
+}
+
+#imageComparison h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* 진행률 표시 개선 */
+.progress {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+    font-weight: 600;
+}
+
+#processingLog {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+#processingLog::-webkit-scrollbar {
+    width: 6px;
+}
+
+#processingLog::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#processingLog::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#processingLog::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 배지 스타일 개선 */
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4em 0.6em;
+    border-radius: 6px;
+}
+
+/* 상세 정보 스타일 */
+#batchProgress .card-body > div.row > div {
+    margin-bottom: 0.5rem;
+}
+
+#batchProgress .card-body strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* 반응형 이미지 비교 */
+@media (max-width: 768px) {
+    #imageComparison .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    #imageComparison .preview-image {
+        max-height: 200px;
+    }
+}
+
+/* 로딩 애니메이션 개선 */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% {
+        background-position: 1rem 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* 현재 파일 진행률 바 스타일 */
+#currentFileProgressBar {
+    transition: width 0.3s ease;
+    font-size: 0.8rem;
+}
+
+/* 통계 정보 스타일 */
+#batchProgress .mb-2 {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#batchProgress .mb-2:last-child {
+    border-bottom: none;
+}
+
+/* 히스토리 및 캐시 관리 스타일 */
+.history-item {
+    transition: background-color 0.2s ease;
+}
+
+.history-item:hover {
+    background-color: #f8f9fa;
+}
+
+.history-item .img-thumbnail {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+.history-item .btn-group-vertical .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* 캐시 상태 카드 스타일 */
+#history .card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#history .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* 캐시 사용량 진행률 바 */
+#cacheUsageBar {
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* 캐시 통계 박스 */
+.col-6 .border {
+    background-color: #fafafa;
+    transition: background-color 0.2s ease;
+}
+
+.col-6 .border:hover {
+    background-color: #f0f0f0;
+}
+
+/* 히스토리 상세 모달 스타일 */
+.modal-body table {
+    font-size: 0.9rem;
+}
+
+.modal-body table td:first-child {
+    font-weight: 600;
+    color: #495057;
+    width: 30%;
+}
+
+/* 히스토리 빈 상태 스타일 */
+#historyList .text-center.text-muted {
+    padding: 3rem 1rem;
+}
+
+#historyList .fa-2x {
+    color: #dee2e6;
+}
+
+/* 캐시 설정 폼 스타일 */
+#history .form-control-sm {
+    font-size: 0.875rem;
+}
+
+#history .form-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+/* 버튼 그룹 스타일 개선 */
+.btn-group-vertical .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+}
+
+.btn-group-vertical .btn:last-child {
+    border-bottom-left-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.btn-group-vertical .btn:not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+
+/* 반응형 히스토리 */
+@media (max-width: 768px) {
+    .history-item .col-md-2:last-child {
+        margin-top: 1rem;
+    }
+    
+    .history-item .btn-group-vertical {
+        flex-direction: row;
+    }
+    
+    .history-item .btn-group-vertical .btn {
+        flex: 1;
+        font-size: 0.7rem;
+    }
+}
+
+/* 배지 스타일 */
+.badge.bg-light {
+    color: #495057 !important;
+    border: 1px solid #dee2e6;
+}

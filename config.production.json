@@ -1,0 +1,70 @@
+{
+  "app_name": "Image Base64 Converter",
+  "app_version": "2.0.0",
+  "environment": "production",
+  "data_dir": "/var/lib/image-converter/data",
+  "temp_dir": "/tmp/image-converter",
+  
+  "security": {
+    "max_file_size_mb": 5,
+    "allowed_mime_types": [
+      "image/jpeg",
+      "image/jpg", 
+      "image/png",
+      "image/webp"
+    ],
+    "enable_content_scan": true,
+    "enable_header_validation": true,
+    "rate_limit_requests_per_minute": 30,
+    "rate_limit_burst_size": 5,
+    "enable_ip_blocking": true,
+    "blocked_ips": []
+  },
+  
+  "cache": {
+    "backend": "redis",
+    "max_size_mb": 500,
+    "max_entries": 10000,
+    "max_age_hours": 12,
+    "cleanup_interval_minutes": 30,
+    "cache_dir": "/var/cache/image-converter",
+    "redis_url": "redis://localhost:6379/0",
+    "enable_compression": true
+  },
+  
+  "processing": {
+    "max_concurrent_files": 5,
+    "max_queue_size": 200,
+    "enable_memory_optimization": true,
+    "max_memory_usage_mb": 1000,
+    "enable_parallel_processing": true,
+    "cpu_workers": 4,
+    "io_workers": 8,
+    "large_file_threshold_mb": 25,
+    "streaming_chunk_size_kb": 32
+  },
+  
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "debug": false,
+    "secret_key": "CHANGE-THIS-TO-A-SECURE-RANDOM-KEY",
+    "max_content_length_mb": 8,
+    "enable_cors": false,
+    "cors_origins": ["https://yourdomain.com"],
+    "enable_websocket": true,
+    "websocket_async_mode": "eventlet"
+  },
+  
+  "logging": {
+    "level": "WARNING",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "enable_file_logging": true,
+    "log_dir": "/var/log/image-converter",
+    "max_file_size_mb": 50,
+    "backup_count": 10,
+    "enable_structured_logging": true,
+    "enable_security_logging": true,
+    "enable_performance_logging": true
+  }
+}

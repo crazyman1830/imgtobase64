@@ -3,10 +3,11 @@ Image to base64 converter module.
 """
 import base64
 import os
+import time
 from pathlib import Path
 from typing import Dict, Set
 
-from models import (
+from ..models.models import (
     ConversionResult,
     ImageConverterError,
     UnsupportedFormatError,
@@ -14,6 +15,8 @@ from models import (
     PermissionError,
     CorruptedFileError
 )
+from .error_handler import get_error_handler
+from .structured_logger import get_structured_logger
 
 
 class ImageConverter:
@@ -38,7 +41,11 @@ class ImageConverter:
             '.gif': 'image/gif',
             '.bmp': 'image/bmp',
             '.webp': 'image/webp'
-        }    
+        }
+        
+        # Initialize error handler and logger
+        self.error_handler = get_error_handler()
+        self.logger = get_structured_logger('image_converter')    
 
     def is_supported_format(self, file_path: str) -> bool:
         """
@@ -87,27 +94,51 @@ class ImageConverter:
         Returns:
             ConversionResult object containing conversion details
         """
+        start_time = time.time()
+        operation_id = self.logger.log_operation_start(
+            "convert_to_base64",
+            file_path=file_path
+        )
+        
         result = ConversionResult(file_path=file_path, success=False)
         
         try:
             # Check if file exists
             if not os.path.exists(file_path):
-                result.error_message = f"File not found: {file_path}"
+                exception = FileNotFoundError(f"File not found: {file_path}")
+                error_context = self.error_handler.handle_error(
+                    exception,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
                 return result
             
             # Check if it's a file (not a directory)
             if not os.path.isfile(file_path):
-                result.error_message = f"Path is not a file: {file_path}"
+                exception = FileNotFoundError(f"Path is not a file: {file_path}")
+                error_context = self.error_handler.handle_error(
+                    exception,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
                 return result
             
             # Check if format is supported
             if not self.is_supported_format(file_path):
                 file_extension = Path(file_path).suffix.lower()
                 supported_list = ', '.join(sorted(self.supported_formats))
-                result.error_message = (
+                exception = UnsupportedFormatError(
                     f"Unsupported file format '{file_extension}'. "
                     f"Supported formats: {supported_list}"
                 )
+                error_context = self.error_handler.handle_error(
+                    exception,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
                 return result
             
             # Get MIME type
@@ -115,7 +146,12 @@ class ImageConverter:
                 mime_type = self.get_mime_type(file_path)
                 result.mime_type = mime_type
             except UnsupportedFormatError as e:
-                result.error_message = str(e)
+                error_context = self.error_handler.handle_error(
+                    e,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
                 return result
             
             # Read file and get size
@@ -132,16 +168,59 @@ class ImageConverter:
                     result.data_uri = f"data:{mime_type};base64,{base64_encoded}"
                     
                     result.success = True
+                    result.processing_time = time.time() - start_time
                     
-            except PermissionError:
-                result.error_message = f"Permission denied: Cannot read file {file_path}"
+                    # Log successful completion
+                    self.logger.log_operation_end(
+                        "convert_to_base64",
+                        operation_id,
+                        success=True,
+                        processing_time=result.processing_time,
+                        file_path=file_path,
+                        metadata={'file_size': result.file_size, 'mime_type': mime_type}
+                    )
+                    
+            except PermissionError as e:
+                error_context = self.error_handler.handle_error(
+                    e,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
             except IOError as e:
-                result.error_message = f"Error reading file {file_path}: {str(e)}"
+                error_context = self.error_handler.handle_error(
+                    e,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
             except Exception as e:
-                result.error_message = f"Unexpected error processing {file_path}: {str(e)}"
+                error_context = self.error_handler.handle_error(
+                    e,
+                    operation="convert_to_base64",
+                    file_path=file_path
+                )
+                result.error_message = error_context.user_message
                 
         except Exception as e:
-            result.error_message = f"Unexpected error: {str(e)}"
+            error_context = self.error_handler.handle_error(
+                e,
+                operation="convert_to_base64",
+                file_path=file_path
+            )
+            result.error_message = error_context.user_message
+        
+        # Log completion (success or failure)
+        if not result.success:
+            result.processing_time = time.time() - start_time
+            self.logger.log_operation_end(
+                "convert_to_base64",
+                operation_id,
+                success=False,
+                processing_time=result.processing_time,
+                file_path=file_path,
+                error_message=result.error_message
+            )
         
         return result
     

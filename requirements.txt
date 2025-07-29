@@ -1,7 +1,62 @@
 # Image Base64 Converter Requirements
+# Updated for enhanced features including advanced processing, caching, security, and performance optimization
 
-# Core dependencies
-Pillow>=9.0.0  # For image processing
-Flask>=2.0.0   # For web UI
-Werkzeug>=2.0.0  # Flask dependency
+# Core Image Processing
+Pillow>=10.0.0          # Advanced image processing and format support
+pillow-heif>=0.10.0     # HEIF/HEIC format support (optional)
+
+# Web Framework and Real-time Communication
+Flask>=2.3.0            # Web application framework
+Flask-SocketIO>=5.3.0   # WebSocket support for real-time updates
+Werkzeug>=2.3.0         # WSGI utilities for Flask
+eventlet>=0.33.0        # Async networking library for SocketIO
+python-socketio>=5.8.0  # Socket.IO server implementation
+
+# Security and Validation
+python-magic>=0.4.27    # MIME type detection and file validation
+cryptography>=41.0.0    # Cryptographic functions for security features
+
+# Performance and System Monitoring
+psutil>=5.9.0           # System and process monitoring
+memory-profiler>=0.61.0 # Memory usage profiling and optimization
+
+# Caching and Storage
+diskcache>=5.6.0        # Disk-based caching system (alternative to custom cache)
+
+# Async Processing and Concurrency
+asyncio-throttle>=1.0.2 # Rate limiting for async operations
+aiofiles>=23.0.0        # Async file operations
+
+# Data Validation and Serialization
+pydantic>=2.0.0         # Data validation and settings management
+marshmallow>=3.20.0     # Object serialization/deserialization
+
+# Logging and Monitoring
+structlog>=23.0.0       # Structured logging
+colorlog>=6.7.0         # Colored console logging
+
+# Development and Testing (optional, for development environment)
+pytest>=7.4.0           # Testing framework
+pytest-cov>=4.1.0       # Coverage reporting
+pytest-asyncio>=0.21.0  # Async testing support
+black>=23.0.0           # Code formatting
+flake8>=6.0.0           # Code linting
+mypy>=1.5.0             # Type checking
+
+# Optional Performance Enhancements
+numpy>=1.24.0           # Numerical operations (for advanced image processing)
+opencv-python>=4.8.0    # Computer vision library (optional, for advanced features)
+
+# Platform-specific dependencies
+# Windows
+pywin32>=306; sys_platform == "win32"  # Windows-specific APIs
+
+# macOS
+pyobjc-framework-Cocoa>=9.2; sys_platform == "darwin"  # macOS-specific APIs
+
+# Note: Some dependencies are optional and can be removed if not needed:
+# - pillow-heif: For HEIF/HEIC support
+# - opencv-python: For advanced computer vision features
+# - numpy: For numerical operations
+# - Development dependencies (pytest, black, etc.) for production deployment
 

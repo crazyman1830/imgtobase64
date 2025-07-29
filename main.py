@@ -13,9 +13,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.cli import CLI
-from src.converter import ImageConverter
-from src.file_handler import FileHandler
-from src.models import ImageConverterError
+from src.core.converter import ImageConverter
+from src.core.file_handler import FileHandler
+from src.models.models import ImageConverterError
 
 
 def main() -> None:
