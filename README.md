@@ -1,143 +1,151 @@
-# Image Base64 Converter
+# 이미지 Base64 변환기
 
-A comprehensive Python tool for converting images to/from Base64 format with advanced processing capabilities. Provides both web UI and command-line interfaces for maximum flexibility.
+고급 처리 기능을 갖춘 포괄적인 Python 이미지 Base64 변환 도구입니다. 최대한의 유연성을 위해 웹 UI와 명령줄 인터페이스를 모두 제공합니다.
 
-## 🚀 Key Features
+## 🚀 주요 기능
 
-### Core Functionality
-- **Multi-format Support**: PNG, JPG, JPEG, GIF, BMP, WEBP, TIFF, ICO
-- **Bidirectional Conversion**: Image ↔ Base64 with full fidelity
-- **Advanced Processing**: Resize, rotate, flip, compress, and format conversion
-- **Batch Processing**: Handle multiple files simultaneously with progress tracking
+### 핵심 기능
+- **다중 포맷 지원**: PNG, JPG, JPEG, GIF, BMP, WEBP, TIFF, ICO
+- **양방향 변환**: 이미지 ↔ Base64 완전 변환 지원
+- **고급 처리**: 크기 조정, 회전, 뒤집기, 압축, 포맷 변환
+- **배치 처리**: 진행률 추적과 함께 여러 파일 동시 처리
 
-### User Experience
-- **Modern Web UI**: Drag & drop interface with real-time preview
-- **Command Line Tool**: Perfect for automation and batch processing
-- **Real-time Progress**: WebSocket-powered live updates during processing
-- **One-click Copy**: Base64 data directly to clipboard
+### 사용자 경험
+- **현대적 웹 UI**: 실시간 미리보기가 있는 드래그 앤 드롭 인터페이스
+- **명령줄 도구**: 자동화 및 배치 처리에 완벽
+- **실시간 진행률**: WebSocket 기반 실시간 처리 업데이트
+- **원클릭 복사**: Base64 데이터를 클립보드로 직접 복사
 
-### Performance & Security
-- **Intelligent Caching**: Avoid redundant processing with smart caching
-- **Memory Optimization**: Handle large files efficiently with streaming
-- **Security Validation**: Comprehensive file security scanning
-- **Parallel Processing**: Multi-threaded processing for better performance
+### 성능 및 보안
+- **지능형 캐싱**: 스마트 캐싱으로 중복 처리 방지
+- **메모리 최적화**: 스트리밍으로 대용량 파일 효율적 처리
+- **보안 검증**: 포괄적인 파일 보안 스캔
+- **병렬 처리**: 더 나은 성능을 위한 멀티스레드 처리
 
-### Advanced Features
-- **Image Editing**: Basic editing operations (rotate, flip, resize)
-- **Quality Control**: Adjustable compression and quality settings
-- **Format Conversion**: Convert between different image formats
-- **Processing History**: Track and reuse previous conversions
+### 고급 기능
+- **이미지 편집**: 기본 편집 작업 (회전, 뒤집기, 크기 조정)
+- **품질 제어**: 조정 가능한 압축 및 품질 설정
+- **포맷 변환**: 다양한 이미지 포맷 간 변환
+- **처리 기록**: 이전 변환 추적 및 재사용
 
-## 📦 Installation & Setup
+### 아키텍처 개선사항 (v2.0)
+- **의존성 주입**: 테스트 가능하고 유지보수가 쉬운 아키텍처
+- **서비스 레이어**: 비즈니스 로직과 인프라 관심사 분리
+- **인터페이스 기반 설계**: 확장성과 모듈성 향상
+- **통합 에러 처리**: 일관된 에러 처리 및 사용자 친화적 메시지
+- **성능 최적화**: 메모리 효율성 및 스트리밍 처리 개선
 
-### Quick Start (Windows - Recommended)
-1. **Install Dependencies**: Double-click `install_dependencies.bat`
-2. **Launch Web UI**: Double-click `run_web.bat`
-3. **Access Application**: Open http://localhost:5000 in your browser
+## 📦 설치 및 설정
 
-### Manual Installation
+### 빠른 시작 (Windows - 권장)
+1. **의존성 설치**: `install_dependencies.bat` 더블클릭
+2. **웹 UI 실행**: `run_web.bat` 더블클릭
+3. **애플리케이션 접속**: 브라우저에서 http://localhost:5000 열기
+
+### 수동 설치
 ```bash
-# Clone the repository
+# 저장소 복제
 git clone <repository-url>
 cd image-base64-converter
 
-# Install dependencies
+# 의존성 설치
 pip install -r requirements.txt
 
-# Launch web application
+# 웹 애플리케이션 실행
 python run_web.py
 
-# Or use CLI
+# 또는 CLI 사용
 python main.py image.png
 ```
 
-### System Requirements
-- **Python**: 3.7 or higher
-- **Memory**: 2GB RAM minimum (4GB recommended for large files)
-- **Storage**: 100MB for application + cache space
-- **OS**: Windows, macOS, Linux
+### 시스템 요구사항
+- **Python**: 3.7 이상
+- **메모리**: 최소 2GB RAM (대용량 파일의 경우 4GB 권장)
+- **저장공간**: 애플리케이션용 100MB + 캐시 공간
+- **운영체제**: Windows, macOS, Linux
 
-### Dependencies
-- **PIL/Pillow**: Image processing
-- **Flask**: Web framework
-- **Flask-SocketIO**: Real-time communication
-- **psutil**: System monitoring
-- **Additional**: See `requirements.txt` for complete list
+### 의존성
+- **PIL/Pillow**: 이미지 처리
+- **Flask**: 웹 프레임워크
+- **Flask-SocketIO**: 실시간 통신
+- **psutil**: 시스템 모니터링
+- **추가**: 전체 목록은 `requirements.txt` 참조
 
-## 🎯 Usage Guide
+## 🎯 사용 가이드
 
-### Web Interface (Recommended)
+### 웹 인터페이스 (권장)
 
-#### Basic Conversion
-1. **Launch**: Run `run_web.bat` or `python run_web.py`
-2. **Access**: Open http://localhost:5000 in your browser
-3. **Convert**: Drag & drop images or click to select files
-4. **Copy**: Click the copy button to get Base64 data
+#### 기본 변환
+1. **실행**: `run_web.bat` 실행 또는 `python run_web.py`
+2. **접속**: 브라우저에서 http://localhost:5000 열기
+3. **변환**: 이미지를 드래그 앤 드롭하거나 클릭하여 파일 선택
+4. **복사**: 복사 버튼을 클릭하여 Base64 데이터 가져오기
 
-#### Advanced Processing
-1. **Select Options**: Choose resize, quality, format, and rotation settings
-2. **Preview**: See before/after comparison
-3. **Batch Process**: Select multiple files for simultaneous processing
-4. **Monitor Progress**: Watch real-time progress with WebSocket updates
+#### 고급 처리
+1. **옵션 선택**: 크기 조정, 품질, 포맷, 회전 설정 선택
+2. **미리보기**: 변환 전후 비교 확인
+3. **배치 처리**: 여러 파일을 동시에 처리하도록 선택
+4. **진행률 모니터링**: WebSocket 업데이트로 실시간 진행률 확인
 
-#### Features Available in Web UI
-- **Image Editing**: Resize, rotate, flip, and compress images
-- **Format Conversion**: Convert between PNG, JPEG, WEBP, etc.
-- **Quality Control**: Adjust compression levels and quality
-- **Batch Operations**: Process multiple files with progress tracking
-- **History**: View and reuse previous conversions
-- **Cache Management**: Monitor and clear cache as needed
+#### 웹 UI에서 사용 가능한 기능
+- **이미지 편집**: 이미지 크기 조정, 회전, 뒤집기, 압축
+- **포맷 변환**: PNG, JPEG, WEBP 등 간 변환
+- **품질 제어**: 압축 레벨 및 품질 조정
+- **배치 작업**: 진행률 추적과 함께 여러 파일 처리
+- **기록**: 이전 변환 보기 및 재사용
+- **캐시 관리**: 캐시 모니터링 및 정리
 
-### Command Line Interface
+### 명령줄 인터페이스 (v2.0 개선)
 
-#### Basic Usage
+#### 기본 사용법
 ```bash
-# Convert single image
+# 단일 이미지 변환
 python main.py image.png
 
-# Save to file
+# 파일로 저장
 python main.py image.png -o output.txt
 
-# Batch process directory
+# 디렉토리 배치 처리
 python main.py /path/to/images/ -o /path/to/output/
 
-# Windows batch file
+# Windows 배치 파일
 run_cli.bat
 ```
 
-#### Advanced CLI Options
+#### 고급 CLI 옵션
 ```bash
-# Resize image during conversion
-python main.py image.png --width 800 --height 600
-
-# Set quality and format
-python main.py image.png --quality 90 --format JPEG
-
-# Rotate and flip
-python main.py image.png --rotate 90 --flip horizontal
-
-# Enable caching
-python main.py image.png --cache --cache-dir ./cache
-
-# Security scan
-python main.py image.png --security-scan
-
-# Verbose output
+# 상세 출력으로 단일 파일 변환
 python main.py image.png --verbose
+
+# 강제 덮어쓰기로 파일 저장
+python main.py image.png -o output.txt --force
+
+# 디렉토리의 모든 이미지 처리
+python main.py ./images/ --verbose
+
+# 환경 변수로 설정 파일 지정
+CONFIG_FILE=config.production.json python main.py image.png
 ```
 
-### API Integration
+#### 새로운 아키텍처 기능
+- **의존성 주입**: 모든 서비스가 컨테이너를 통해 관리됨
+- **개선된 에러 처리**: 사용자 친화적인 에러 메시지
+- **통합 로깅**: 구조화된 로그와 컨텍스트 정보
+- **캐싱 최적화**: 지능형 캐시 키 생성 및 관리
+- **메모리 효율성**: 대용량 파일을 위한 스트리밍 처리
+
+### API 통합
 
 #### REST API
 ```python
 import requests
 
-# Basic conversion
+# 기본 변환
 files = {'file': open('image.png', 'rb')}
 response = requests.post('http://localhost:5000/api/convert/to-base64', files=files)
 result = response.json()
 
-# Advanced processing
+# 고급 처리
 options = {
     'resize_width': 800,
     'quality': 90,
@@ -148,177 +156,265 @@ response = requests.post('http://localhost:5000/api/convert/to-base64-advanced',
                         files=files, data=data)
 ```
 
-#### WebSocket Integration
+#### WebSocket 통합
 ```javascript
 const socket = io();
 
-// Join queue for updates
+// 업데이트를 위한 큐 참여
 socket.emit('join_queue', {queue_id: 'your-queue-id'});
 
-// Listen for progress
+// 진행률 수신
 socket.on('batch_progress', (data) => {
-    console.log(`Progress: ${data.progress_percentage}%`);
+    console.log(`진행률: ${data.progress_percentage}%`);
 });
 ```
 
-## 📋 Output Formats & Examples
+## 📋 출력 형식 및 예제
 
-### Data URI Format
-The converted result is output in Data URI format, ready for immediate use:
+### Data URI 형식
+변환된 결과는 즉시 사용 가능한 Data URI 형식으로 출력됩니다:
 ```
 data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
 ```
 
-### Usage Examples
+### 사용 예제
 
-#### HTML Integration
+#### HTML 통합
 ```html
-<img src="data:image/png;base64,..." alt="Converted Image">
+<img src="data:image/png;base64,..." alt="변환된 이미지">
 <div style="background-image: url('data:image/jpeg;base64,...')"></div>
 ```
 
-#### CSS Integration
+#### CSS 통합
 ```css
 .background {
     background-image: url('data:image/webp;base64,...');
 }
 ```
 
-#### JavaScript Integration
+#### JavaScript 통합
 ```javascript
 const img = new Image();
 img.src = 'data:image/png;base64,...';
 document.body.appendChild(img);
 ```
 
-## 🎨 Supported Formats
+## 🎨 지원 포맷
 
-### Input Formats
-- **PNG**: Lossless compression, transparency support
-- **JPEG/JPG**: Lossy compression, smaller file sizes
-- **WEBP**: Modern format, excellent compression
-- **GIF**: Animation support, limited colors
-- **BMP**: Uncompressed, large file sizes
-- **TIFF**: High quality, multiple pages
-- **ICO**: Icon format, multiple sizes
+### 입력 포맷
+- **PNG**: 무손실 압축, 투명도 지원
+- **JPEG/JPG**: 손실 압축, 작은 파일 크기
+- **WEBP**: 현대적 포맷, 뛰어난 압축률
+- **GIF**: 애니메이션 지원, 제한된 색상
+- **BMP**: 비압축, 큰 파일 크기
+- **TIFF**: 고품질, 다중 페이지
+- **ICO**: 아이콘 포맷, 다중 크기
 
-### Output Formats
-All input formats plus optimized variants:
-- **PNG**: Optimized compression levels
-- **JPEG**: Quality control (1-100)
-- **WEBP**: Advanced compression options
-- **Format Conversion**: Convert between any supported formats
+### 출력 포맷
+모든 입력 포맷과 최적화된 변형:
+- **PNG**: 최적화된 압축 레벨
+- **JPEG**: 품질 제어 (1-100)
+- **WEBP**: 고급 압축 옵션
+- **포맷 변환**: 지원되는 모든 포맷 간 변환
 
-### Processing Capabilities
-- **Resize**: Maintain aspect ratio or custom dimensions
-- **Rotate**: 90°, 180°, 270° rotations
-- **Flip**: Horizontal and vertical flipping
-- **Compress**: Quality adjustment and optimization
-- **Convert**: Change format while processing
+### 처리 기능
+- **크기 조정**: 종횡비 유지 또는 사용자 정의 크기
+- **회전**: 90°, 180°, 270° 회전
+- **뒤집기**: 수평 및 수직 뒤집기
+- **압축**: 품질 조정 및 최적화
+- **변환**: 처리 중 포맷 변경
 
-## 📁 Project Structure
+## 📁 프로젝트 구조 (v2.0 리팩토링)
 
 ```
 image-base64-converter/
-├── src/                           # Source code
-│   ├── core/                      # Core processing modules
-│   │   ├── converter.py           # Main conversion logic
-│   │   ├── image_processor.py     # Advanced image processing
-│   │   ├── multi_file_handler.py  # Batch processing
-│   │   ├── cache_manager.py       # Caching system
-│   │   ├── security_validator.py  # Security validation
-│   │   ├── memory_optimizer.py    # Memory optimization
-│   │   ├── parallel_processor.py  # Parallel processing
-│   │   └── rate_limiter.py        # Rate limiting
-│   ├── web/                       # Web application
-│   │   ├── web_app.py            # Flask application
-│   │   └── async_handler.py      # Async processing
-│   ├── models/                    # Data models
-│   │   ├── models.py             # Core models
-│   │   └── processing_options.py # Processing options
-│   ├── utils/                     # Utilities
-│   │   └── utils.py              # Helper functions
-│   ├── templates/                 # HTML templates
-│   │   └── index.html            # Main web interface
-│   └── static/                    # Static assets
-│       ├── js/                   # JavaScript files
-│       └── css/                  # Stylesheets
-├── tests/                         # Test suite
-│   ├── test_image_processor.py   # Image processing tests
-│   ├── test_multi_file_handler.py # Batch processing tests
-│   ├── test_cache_manager.py     # Cache tests
-│   ├── test_security_validator.py # Security tests
-│   └── test_integration.py       # Integration tests
-├── logs/                          # Application logs
-├── cache/                         # Cache directory
-├── main.py                        # CLI entry point
-├── run_web.py                     # Web server launcher
-├── requirements.txt               # Python dependencies
-├── install_dependencies.bat       # Windows installer
-├── run_web.bat                   # Windows web launcher
-├── run_cli.bat                   # Windows CLI launcher
-├── API_ENDPOINTS.md              # API documentation
-└── README.md                     # This file
+├── src/                                    # 소스 코드
+│   ├── core/                              # 핵심 레이어
+│   │   ├── interfaces/                    # 인터페이스 정의
+│   │   │   ├── image_converter.py        # 이미지 변환 인터페이스
+│   │   │   ├── file_handler.py           # 파일 처리 인터페이스
+│   │   │   └── cache_manager.py          # 캐시 관리 인터페이스
+│   │   ├── services/                      # 비즈니스 로직 서비스
+│   │   │   ├── image_conversion_service.py # 이미지 변환 서비스
+│   │   │   ├── file_handler_service.py   # 파일 처리 서비스
+│   │   │   ├── cache_manager_service.py  # 캐시 관리 서비스
+│   │   │   ├── streaming_image_processor.py # 스트리밍 처리
+│   │   │   └── memory_optimized_conversion_service.py # 메모리 최적화
+│   │   ├── factories/                     # 객체 생성 팩토리
+│   │   │   ├── service_factory.py        # 서비스 팩토리
+│   │   │   └── cache_factory.py          # 캐시 팩토리
+│   │   ├── config/                        # 설정 관리
+│   │   │   ├── app_config.py             # 애플리케이션 설정
+│   │   │   ├── config_factory.py         # 설정 팩토리
+│   │   │   └── unified_config_manager.py # 통합 설정 관리자
+│   │   ├── logging/                       # 로깅 시스템
+│   │   │   ├── unified_logger.py         # 통합 로거
+│   │   │   ├── log_handlers.py           # 로그 핸들러
+│   │   │   └── log_formatters.py         # 로그 포매터
+│   │   ├── utils/                         # 유틸리티
+│   │   │   ├── memory_optimizer.py       # 메모리 최적화
+│   │   │   ├── memory_pool.py            # 메모리 풀
+│   │   │   ├── path_utils.py             # 경로 유틸리티
+│   │   │   ├── type_utils.py             # 타입 유틸리티
+│   │   │   └── validation_utils.py       # 검증 유틸리티
+│   │   ├── adapters/                      # 어댑터 패턴
+│   │   │   ├── legacy_image_converter_adapter.py # 레거시 호환성
+│   │   │   ├── image_converter_adapter.py # 이미지 변환 어댑터
+│   │   │   ├── file_handler_adapter.py   # 파일 처리 어댑터
+│   │   │   └── config_adapter.py         # 설정 어댑터
+│   │   ├── base/                          # 기본 클래스
+│   │   │   └── result.py                 # Result 패턴
+│   │   ├── container.py                   # 의존성 주입 컨테이너
+│   │   ├── error_handler.py              # 중앙화된 에러 처리
+│   │   └── structured_logger.py          # 구조화된 로깅
+│   ├── domain/                            # 도메인 레이어
+│   │   └── exceptions/                    # 도메인 예외
+│   │       ├── base.py                   # 기본 예외
+│   │       ├── validation.py             # 검증 예외
+│   │       ├── file_system.py            # 파일 시스템 예외
+│   │       ├── processing.py             # 처리 예외
+│   │       ├── cache.py                  # 캐시 예외
+│   │       ├── security.py               # 보안 예외
+│   │       └── queue.py                  # 큐 예외
+│   ├── models/                            # 데이터 모델
+│   │   ├── models.py                     # 핵심 모델
+│   │   └── processing_options.py         # 처리 옵션
+│   ├── web/                               # 웹 애플리케이션
+│   │   ├── web_app.py                    # Flask 애플리케이션
+│   │   ├── refactored_app.py             # 리팩토링된 앱
+│   │   ├── handlers.py                   # 요청 핸들러
+│   │   ├── middleware.py                 # 미들웨어
+│   │   ├── error_formatter.py            # 에러 포매터
+│   │   └── test_integration.py           # 통합 테스트
+│   ├── templates/                         # HTML 템플릿
+│   ├── static/                            # 정적 자산
+│   ├── cli.py                            # CLI 인터페이스
+│   └── __init__.py
+├── tests/                                 # 테스트 스위트
+│   ├── integration/                       # 통합 테스트
+│   │   ├── test_functionality_verification.py # 기능 검증
+│   │   ├── test_performance_benchmarks.py # 성능 벤치마크
+│   │   ├── test_report_generator.py      # 테스트 리포트
+│   │   ├── run_functionality_tests.py    # 기능 테스트 실행
+│   │   └── TESTING_SUMMARY.md           # 테스트 요약
+│   └── unit/                             # 단위 테스트
+├── .kiro/                                # Kiro 설정
+│   └── specs/code-refactoring/           # 리팩토링 스펙
+│       ├── requirements.md               # 요구사항
+│       ├── design.md                     # 설계 문서
+│       ├── tasks.md                      # 작업 목록
+│       ├── MIGRATION_GUIDE.md           # 마이그레이션 가이드
+│       └── examples/                     # 예제 코드
+├── logs/                                  # 애플리케이션 로그
+├── cache/                                 # 캐시 디렉토리
+├── data/                                  # 데이터 디렉토리
+├── temp/                                  # 임시 파일
+├── main.py                               # CLI 진입점
+├── run_web.py                            # 웹 서버 런처
+├── performance_demo.py                   # 성능 데모
+├── requirements.txt                      # Python 의존성
+├── config.json                           # 기본 설정
+├── config.production.json                # 프로덕션 설정
+├── docker-compose.yml                    # Docker Compose
+├── Dockerfile                            # Docker 설정
+├── install_dependencies.bat              # Windows 설치 스크립트
+├── run_web.bat                          # Windows 웹 런처
+├── run_cli.bat                          # Windows CLI 런처
+├── docs/                                # 문서 디렉토리
+│   ├── API_ENDPOINTS.md                # API 문서
+│   ├── ARCHITECTURE.md                 # 아키텍처 문서
+│   ├── CHANGELOG.md                    # 변경 로그
+│   ├── DEPLOYMENT.md                   # 배포 가이드
+│   ├── MIGRATION_GUIDE.md              # 마이그레이션 가이드
+│   └── TESTING_SUMMARY.md              # 테스트 요약
+└── README.md                           # 이 파일
 ```
 
-## 🔧 Configuration
+## 🔧 설정 (v2.0 통합 설정 시스템)
 
-### Environment Variables
+### 환경 변수
 ```bash
-# Cache settings
+# 캐시 설정
 CACHE_DIR=./cache
 CACHE_MAX_SIZE_MB=100
 CACHE_MAX_AGE_HOURS=24
 
-# Security settings
+# 보안 설정
 MAX_FILE_SIZE_MB=10
 ENABLE_SECURITY_SCAN=true
 RATE_LIMIT_REQUESTS_PER_MINUTE=60
 
-# Performance settings
+# 성능 설정
 MAX_CONCURRENT_PROCESSING=3
 ENABLE_MEMORY_OPTIMIZATION=true
 PARALLEL_PROCESSING_WORKERS=4
+
+# 로깅 설정
+LOG_LEVEL=INFO
+ENABLE_FILE_LOGGING=true
+LOG_DIR=./logs
+
+# 설정 파일 지정
+CONFIG_FILE=config.production.json
 ```
 
-### Configuration Files
-- **Cache**: Automatic cache management with configurable limits
-- **Security**: Customizable security policies and validation rules
-- **Performance**: Adjustable concurrency and memory settings
-- **Logging**: Structured logging with multiple levels
+### 설정 파일 (통합 관리)
+- **config.json**: 개발 환경 기본 설정
+- **config.production.json**: 프로덕션 환경 설정
+- **통합 설정 관리자**: 환경변수, 파일, 기본값의 우선순위 관리
+- **의존성 주입**: 설정 기반 서비스 구성 자동화
 
-## 🧪 Testing
+### 새로운 설정 기능
+- **설정 팩토리**: 다양한 소스에서 설정 로드
+- **설정 검증**: 시작 시 설정 유효성 검사
+- **동적 설정**: 런타임 설정 업데이트 지원
+- **환경별 설정**: 개발/테스트/프로덕션 환경 분리
 
-### Run Tests
+## 🧪 테스트 (v2.0 통합 테스트 시스템)
+
+### 테스트 실행
 ```bash
-# Run all tests
+# 모든 테스트 실행
 python -m pytest tests/
 
-# Run specific test category
-python -m pytest tests/test_image_processor.py
+# 통합 테스트 실행
+python -m pytest tests/integration/
 
-# Run with coverage
-python -m pytest tests/ --cov=src/
+# 기능 검증 테스트
+python tests/integration/run_functionality_tests.py
 
-# Performance benchmarks
+# 성능 벤치마크
+python tests/integration/test_performance_benchmarks.py
+
+# 테스트 리포트 생성
+python tests/integration/test_report_generator.py
+
+# 성능 데모
 python performance_demo.py
 ```
 
-### Test Categories
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: End-to-end workflow testing
-- **Performance Tests**: Load and stress testing
-- **Security Tests**: Vulnerability and validation testing
+### 테스트 카테고리
+- **단위 테스트**: 개별 컴포넌트 테스트
+- **통합 테스트**: 엔드투엔드 워크플로우 테스트
+- **기능 검증 테스트**: 리팩토링 후 기능 호환성 검증
+- **성능 테스트**: 로드 및 스트레스 테스트
+- **보안 테스트**: 취약점 및 검증 테스트
 
-## 🚀 Deployment
+### 새로운 테스트 기능
+- **의존성 주입 테스트**: 모킹과 테스트 더블 지원
+- **테스트 컨테이너**: 테스트 전용 DI 컨테이너
+- **성능 벤치마킹**: 리팩토링 전후 성능 비교
+- **자동화된 테스트 리포트**: 테스트 결과 자동 생성
 
-### Production Considerations
-- **Security**: Implement authentication and authorization
-- **Scaling**: Use load balancers and multiple instances
-- **Monitoring**: Set up logging and performance monitoring
-- **Caching**: Configure Redis or similar for distributed caching
+## 🚀 배포
 
-### Docker Deployment
+### 프로덕션 고려사항
+- **보안**: 인증 및 권한 부여 구현
+- **확장성**: 로드 밸런서 및 다중 인스턴스 사용
+- **모니터링**: 로깅 및 성능 모니터링 설정
+- **캐싱**: 분산 캐싱을 위한 Redis 또는 유사한 도구 구성
+
+### Docker 배포
 ```dockerfile
 FROM python:3.9-slim
 COPY . /app
@@ -328,36 +424,57 @@ EXPOSE 5000
 CMD ["python", "run_web.py"]
 ```
 
-## 🤝 Contributing
+## 📚 문서
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+상세한 문서는 **[docs/](docs/)** 폴더에서 확인할 수 있습니다:
 
-### Development Setup
+- **[아키텍처 가이드](docs/ARCHITECTURE.md)** - v2.0 리팩토링된 시스템 구조
+- **[API 문서](docs/API_ENDPOINTS.md)** - REST API 및 WebSocket 가이드  
+- **[배포 가이드](docs/DEPLOYMENT.md)** - 개발/프로덕션 환경 배포
+- **[마이그레이션 가이드](docs/MIGRATION_GUIDE.md)** - v1.x → v2.0 업그레이드
+- **[변경 로그](docs/CHANGELOG.md)** - 버전별 개선사항
+- **[테스트 요약](docs/TESTING_SUMMARY.md)** - 성능 벤치마크 결과
+
+## 🤝 기여하기
+
+1. **저장소 포크**
+2. **기능 브랜치 생성** (`git checkout -b feature/amazing-feature`)
+3. **변경사항 커밋** (`git commit -m 'Add amazing feature'`)
+4. **브랜치에 푸시** (`git push origin feature/amazing-feature`)
+5. **Pull Request 열기**
+
+### 개발 환경 설정
 ```bash
-# Install development dependencies
+# 개발 의존성 설치
 pip install -r requirements-dev.txt
 
-# Run tests before committing
+# 커밋 전 테스트 실행
 python -m pytest tests/
 
-# Format code
+# 코드 포맷팅
 black src/ tests/
 
-# Lint code
+# 코드 린팅
 flake8 src/ tests/
+
+# 통합 테스트 실행
+python tests/integration/run_functionality_tests.py
 ```
 
-## 📄 License
+### 아키텍처 가이드라인
+- **의존성 주입**: 새로운 서비스는 인터페이스를 통해 주입받도록 구현
+- **Result 패턴**: 에러 처리는 Result 패턴을 사용
+- **단일 책임 원칙**: 각 클래스는 하나의 책임만 가지도록 설계
+- **인터페이스 분리**: 큰 인터페이스는 작은 인터페이스로 분리
+- **테스트 가능성**: 모든 새로운 코드는 단위 테스트 작성
 
-MIT License - see [LICENSE](LICENSE) file for details.
+## 📄 라이선스
 
-## 🙏 Acknowledgments
+MIT 라이선스 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-- **Pillow**: Python Imaging Library for image processing
-- **Flask**: Lightweight web framework
-- **Socket.IO**: Real-time communication
-- **Contributors**: Thanks to all contributors who helped improve this project
+## 🙏 감사의 말
+
+- **Pillow**: 이미지 처리를 위한 Python 이미징 라이브러리
+- **Flask**: 경량 웹 프레임워크
+- **Socket.IO**: 실시간 통신
+- **기여자들**: 이 프로젝트 개선에 도움을 주신 모든 기여자분들께 감사드립니다

@@ -1,70 +1,98 @@
-# Deployment Guide
+# 배포 가이드
 
-This guide covers various deployment options for the Image Base64 Converter application.
+이 가이드는 이미지 Base64 변환기 애플리케이션의 다양한 배포 옵션을 다룹니다.
 
-## Table of Contents
+## 목차
 
-1. [Development Deployment](#development-deployment)
-2. [Production Deployment](#production-deployment)
-3. [Docker Deployment](#docker-deployment)
-4. [Cloud Deployment](#cloud-deployment)
-5. [Configuration Management](#configuration-management)
-6. [Monitoring and Logging](#monitoring-and-logging)
-7. [Security Considerations](#security-considerations)
-8. [Performance Optimization](#performance-optimization)
+1. [개발 환경 배포](#개발-환경-배포)
+2. [프로덕션 배포](#프로덕션-배포)
+3. [Docker 배포](#docker-배포)
+4. [클라우드 배포](#클라우드-배포)
+5. [설정 관리](#설정-관리)
+6. [모니터링 및 로깅](#모니터링-및-로깅)
+7. [보안 고려사항](#보안-고려사항)
+8. [성능 최적화](#성능-최적화)
 
-## Development Deployment
+## v2.0 아키텍처 개선사항
 
-### Quick Start
+- **의존성 주입 컨테이너**: 모든 배포 환경에서 일관된 서비스 관리
+- **통합 설정 시스템**: 환경별 설정 파일과 환경변수 지원
+- **구조화된 로깅**: 프로덕션 환경에서 향상된 모니터링
+- **메모리 최적화**: 대용량 파일 처리를 위한 스트리밍 지원
+- **에러 처리 개선**: 사용자 친화적인 에러 메시지와 로깅
+
+## 개발 환경 배포
+
+### 빠른 시작
 
 ```bash
-# Install dependencies
+# 의존성 설치
 pip install -r requirements.txt
 
-# Run development server
+# 개발 서버 실행
 python run_web.py
 
-# Or with custom configuration
+# 또는 사용자 정의 설정으로 실행
 python run_web.py --config config.json --debug
 ```
 
-### Development Features
+### 개발 환경 기능
 
-- **Hot Reload**: Automatic restart on code changes
-- **Debug Mode**: Detailed error messages and debugging tools
-- **File Logging**: Logs stored in `./logs/` directory
-- **Local Cache**: Disk-based caching in `./cache/` directory
+- **핫 리로드**: 코드 변경 시 자동 재시작
+- **디버그 모드**: 상세한 에러 메시지 및 디버깅 도구
+- **파일 로깅**: `./logs/` 디렉토리에 로그 저장
+- **로컬 캐시**: `./cache/` 디렉토리의 디스크 기반 캐싱
 
-## Production Deployment
+### v2.0 개발 환경 개선사항
 
-### Prerequisites
+- **의존성 주입**: 개발 중 서비스 모킹 및 테스트 용이성
+- **설정 팩토리**: 개발 환경별 설정 자동 로드
+- **통합 로깅**: 개발 중 구조화된 로그 출력
+- **에러 핸들러**: 개발 친화적인 상세 에러 정보
+
+## 프로덕션 배포
+
+### 사전 요구사항
 
 - Python 3.7+
-- Redis (for caching and session storage)
-- Nginx (recommended for reverse proxy)
-- SSL certificates (for HTTPS)
+- Redis (캐싱 및 세션 저장용)
+- Nginx (리버스 프록시 권장)
+- SSL 인증서 (HTTPS용)
 
-### Installation
+### 설치
 
 ```bash
-# Clone repository
+# 저장소 복제
 git clone <repository-url>
 cd image-base64-converter
 
-# Create virtual environment
+# 가상 환경 생성
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Install production dependencies
+# 프로덕션 의존성 설치
 pip install -r requirements.txt
-pip install gunicorn  # For production WSGI server
+pip install gunicorn  # 프로덕션 WSGI 서버용
 
-# Copy and configure environment
+# 환경 설정 복사 및 구성
 cp .env.example .env
-# Edit .env with your production settings
+# 프로덕션 설정으로 .env 편집
 
-# Create necessary directories
+# 필요한 디렉토리 생성
 mkdir -p logs cache data temp
+```
+
+### v2.0 프로덕션 배포 개선사항
+
+```bash
+# 의존성 주입 컨테이너로 프로덕션 서버 실행
+CONFIG_FILE=config.production.json python run_web.py --production
+
+# 또는 환경변수로 설정
+export ENVIRONMENT=production
+export LOG_LEVEL=WARNING
+export CACHE_MAX_SIZE_MB=500
+python run_web.py
 ```
 
 ### Configuration

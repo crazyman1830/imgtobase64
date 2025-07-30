@@ -169,14 +169,235 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Test output files
-test_output/
+# =============================================================================
+# 프로젝트 특화 설정 (Image Base64 Converter v2.0)
+# =============================================================================
+
+# 애플리케이션 로그 파일
+logs/
+*.log
+*.log.*
+log_*.txt
+
+# 캐시 디렉토리
+cache/
+*.cache
+.cache/
+
+# 임시 파일 및 데이터
+temp/
+tmp/
+data/temp/
 *.tmp
 *.temp
+*.temporary
 
-# Image files for testing (if you want to exclude them)
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
+# 테스트 출력 파일
+test_output/
+test_results/
+test_reports/
+tests/output/
+tests/temp/
+tests/cache/
+
+# 성능 벤치마크 결과
+benchmark_results/
+performance_reports/
+*.benchmark
+*.perf
+
+# 설정 파일 (민감한 정보 포함 가능)
+config.local.json
+config.secret.json
+config.*.local.json
+.env.local
+.env.production
+.env.staging
+
+# 업로드된 파일들
+uploads/
+uploaded_images/
+user_uploads/
+
+# 변환 결과 파일들 (선택적)
+output/
+results/
+converted/
+
+# 백업 파일들
+*.backup
+*.bak
+backup/
+backups/
+
+# 프로파일링 결과
+*.prof
+*.profile
+profiling_results/
+
+# Docker 관련
+.dockerignore.local
+docker-compose.override.yml
+docker-compose.local.yml
+
+# 개발 도구 설정
+.vscode/settings.json
+.vscode/launch.json
+.idea/workspace.xml
+.idea/tasks.xml
+
+# 테스트 이미지 파일들 (선택적 - 필요에 따라 주석 해제)
+# test_images/
+# sample_images/
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.bmp
+# *.webp
+# *.tiff
+# *.ico
+
+# 큰 테스트 파일들
+*_large.*
+*_huge.*
+test_*_mb.*
+
+# 메모리 덤프 및 디버그 파일
+*.dmp
+*.dump
+core.*
+memory_*.txt
+
+# 통계 및 메트릭 파일
+stats/
+metrics/
+monitoring/
+*.stats
+*.metrics
+
+# SSL 인증서 및 키 파일
+*.pem
+*.key
+*.crt
+*.cert
+ssl/
+certificates/
+
+# 데이터베이스 파일 (SQLite 등)
+*.db
+*.sqlite
+*.sqlite3
+database/
+
+# 압축 파일
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 운영체제별 파일
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# =============================================================================
+# IDE 및 에디터 설정
+# =============================================================================
+
+# VS Code
+.vscode/
+!.vscode/settings.json.example
+!.vscode/launch.json.example
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =============================================================================
+# 패키지 관리자별 설정
+# =============================================================================
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# conda
+.conda/
+
+# poetry
+poetry.lock
+
+# pipenv
+Pipfile.lock
+
+# =============================================================================
+# CI/CD 및 배포 관련
+# =============================================================================
+
+# GitHub Actions
+.github/workflows/*.local.yml
+
+# Docker
+.dockerignore.local
+docker-compose.override.yml
+
+# Kubernetes
+k8s/secrets/
+*.secret.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# =============================================================================
+# 보안 관련
+# =============================================================================
+
+# 비밀 키 및 토큰
+secrets/
+.secrets/
+*.secret
+*.token
+api_keys.txt
+credentials.json
+
+# 환경 변수 파일
+.env.production
+.env.staging
+.env.secret

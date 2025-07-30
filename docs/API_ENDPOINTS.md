@@ -1,45 +1,53 @@
-# API Endpoints Documentation
+# API 엔드포인트 문서
 
-This document provides comprehensive documentation for all API endpoints in the Image Base64 Converter application. The application supports both REST API endpoints and WebSocket connections for real-time communication.
+이 문서는 이미지 Base64 변환기 애플리케이션의 모든 API 엔드포인트에 대한 포괄적인 문서를 제공합니다. 애플리케이션은 실시간 통신을 위한 REST API 엔드포인트와 WebSocket 연결을 모두 지원합니다.
 
-## Overview
+## 개요
 
-The Image Base64 Converter provides the following main functionalities:
-- **Basic Conversion**: Convert images to/from Base64 format
-- **Advanced Processing**: Apply image transformations (resize, rotate, compress, format conversion)
-- **Batch Processing**: Process multiple files simultaneously with progress tracking
-- **Real-time Updates**: WebSocket support for live progress updates
-- **Security Validation**: File security scanning and validation
-- **Caching**: Intelligent caching for improved performance
+이미지 Base64 변환기는 다음과 같은 주요 기능을 제공합니다:
+- **기본 변환**: 이미지를 Base64 포맷으로/에서 변환
+- **고급 처리**: 이미지 변환 적용 (크기 조정, 회전, 압축, 포맷 변환)
+- **배치 처리**: 진행률 추적과 함께 여러 파일 동시 처리
+- **실시간 업데이트**: 실시간 진행률 업데이트를 위한 WebSocket 지원
+- **보안 검증**: 파일 보안 스캔 및 검증
+- **캐싱**: 성능 향상을 위한 지능형 캐싱
 
-## WebSocket Support
+## v2.0 아키텍처 개선사항
 
-The application supports WebSocket connections for real-time updates during batch processing operations.
+- **의존성 주입**: 모든 API 핸들러가 서비스 레이어를 통해 작동
+- **통합 에러 처리**: 일관된 에러 응답 형식
+- **Result 패턴**: 성공/실패 상태를 명확히 구분하는 응답
+- **구조화된 로깅**: 모든 API 호출에 대한 상세한 로그
+- **성능 최적화**: 메모리 효율적인 스트리밍 처리
+
+## WebSocket 지원
+
+애플리케이션은 배치 처리 작업 중 실시간 업데이트를 위한 WebSocket 연결을 지원합니다.
 
 **WebSocket URL:** `ws://localhost:5000/socket.io/`
 
-### Connection Requirements
-- **Protocol**: Socket.IO (compatible with Socket.IO client libraries)
-- **CORS**: Enabled for all origins (configure for production)
-- **Authentication**: None (implement as needed for production)
+### 연결 요구사항
+- **프로토콜**: Socket.IO (Socket.IO 클라이언트 라이브러리와 호환)
+- **CORS**: 모든 오리진에 대해 활성화 (프로덕션에서는 설정 필요)
+- **인증**: 없음 (프로덕션에서 필요에 따라 구현)
 
-### WebSocket Events
+### WebSocket 이벤트
 
-#### Client to Server Events
+#### 클라이언트에서 서버로 이벤트
 
-**connect**: Establish WebSocket connection
+**connect**: WebSocket 연결 설정
 ```javascript
 socket.on('connect', () => {
-  console.log('Connected to server');
+  console.log('서버에 연결됨');
 });
 ```
 
-**join_queue**: Join a specific queue room for updates
+**join_queue**: 업데이트를 위한 특정 큐 룸 참여
 ```javascript
 socket.emit('join_queue', { queue_id: 'your-queue-id' });
 ```
 
-**leave_queue**: Leave a queue room
+**leave_queue**: 큐 룸 떠나기
 ```javascript
 socket.emit('leave_queue', { queue_id: 'your-queue-id' });
 ```
@@ -64,31 +72,31 @@ socket.emit('get_queue_status', { queue_id: 'your-queue-id' });
 socket.emit('get_active_queues');
 ```
 
-#### Server to Client Events
+#### 서버에서 클라이언트로 이벤트
 
-**connected**: Connection confirmation
+**connected**: 연결 확인
 ```javascript
 socket.on('connected', (data) => {
   console.log(data.message);
 });
 ```
 
-**batch_progress**: Real-time progress updates
+**batch_progress**: 실시간 진행률 업데이트
 ```javascript
 socket.on('batch_progress', (data) => {
-  console.log(`Progress: ${data.progress_percentage}%`);
-  console.log(`Current file: ${data.current_file}`);
-  console.log(`ETA: ${data.estimated_time_remaining}s`);
+  console.log(`진행률: ${data.progress_percentage}%`);
+  console.log(`현재 파일: ${data.current_file}`);
+  console.log(`예상 남은 시간: ${data.estimated_time_remaining}초`);
 });
 ```
 
-**file_processed**: Individual file completion notification
+**file_processed**: 개별 파일 완료 알림
 ```javascript
 socket.on('file_processed', (data) => {
-  console.log(`File processed: ${data.file_path}`);
-  console.log(`Success: ${data.success}`);
+  console.log(`파일 처리됨: ${data.file_path}`);
+  console.log(`성공: ${data.success}`);
   if (!data.success) {
-    console.log(`Error: ${data.error_message}`);
+    console.log(`오류: ${data.error_message}`);
   }
 });
 ```
