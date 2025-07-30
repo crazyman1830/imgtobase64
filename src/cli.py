@@ -5,9 +5,13 @@ import argparse
 import sys
 from typing import Optional
 
-from .core.converter import ImageConverter
-from .core.file_handler import FileHandler
-from .models.models import ImageConverterError
+from .core.container import DIContainer
+from .core.services.image_conversion_service import ImageConversionService
+from .core.interfaces.file_handler import IFileHandler
+from .core.error_handler import ErrorHandler
+from .core.structured_logger import StructuredLogger
+from .core.base.result import Result
+from .domain.exceptions.base import ImageConverterError
 
 
 class CLI:
@@ -16,19 +20,23 @@ class CLI:
     
     Provides a user-friendly command line interface for converting images
     to base64 format, supporting both single file and batch processing.
+    Uses dependency injection for better testability and maintainability.
     """
     
-    def __init__(self, converter: Optional[ImageConverter] = None, 
-                 file_handler: Optional[FileHandler] = None):
+    def __init__(self, container: Optional[DIContainer] = None):
         """
-        Initialize the CLI with converter and file handler dependencies.
+        Initialize the CLI with dependency injection container.
         
         Args:
-            converter: ImageConverter instance for handling conversions
-            file_handler: FileHandler instance for file operations
+            container: DI container with all required services
         """
-        self.converter = converter or ImageConverter()
-        self.file_handler = file_handler or FileHandler()
+        self._container = container or DIContainer.create_default()
+        
+        # Get services from container
+        self._conversion_service: ImageConversionService = self._container.get('image_conversion_service')
+        self._file_handler: IFileHandler = self._container.get('file_handler')
+        self._error_handler: ErrorHandler = self._container.get('error_handler')
+        self._logger: StructuredLogger = self._container.get('logger')
     
     def parse_arguments(self) -> argparse.Namespace:
         """
@@ -102,55 +110,64 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
         try:
             if verbose:
                 print(f"Processing file: {file_path}")
+                self._logger.info("Processing single file", extra={"file_path": file_path})
             
-            # Perform the conversion
-            result = self.converter.convert_to_base64(file_path)
+            # Perform the conversion using the new service layer
+            result = self._conversion_service.convert_image(file_path)
             
             if result.success:
+                conversion_data = result
+                
                 # Display success information
                 if verbose:
                     print(f"✓ Conversion successful")
-                    print(f"  File size: {result.file_size:,} bytes")
-                    print(f"  MIME type: {result.mime_type}")
-                    print(f"  Base64 length: {len(result.base64_data):,} characters")
+                    print(f"  File size: {conversion_data.file_size:,} bytes")
+                    print(f"  MIME type: {conversion_data.mime_type}")
+                    print(f"  Base64 length: {len(conversion_data.base64_data):,} characters")
                 
                 # Prepare output content
-                output_content = result.data_uri
+                output_content = conversion_data.data_uri if conversion_data.data_uri else conversion_data.base64_data
                 
                 if output_path:
-                    # Save to file
-                    try:
-                        self.file_handler.save_to_file(
-                            output_content, 
-                            output_path, 
-                            overwrite=force_overwrite
-                        )
+                    # Save to file using the file handler service
+                    save_result = self._file_handler.save_file(output_content, output_path)
+                    
+                    if save_result:
                         if verbose:
                             print(f"✓ Result saved to: {output_path}")
-                    except FileExistsError:
-                        print(f"Error: Output file already exists: {output_path}")
-                        print("Use -f/--force to overwrite existing files")
-                        sys.exit(1)
-                    except Exception as e:
-                        print(f"Error saving file: {e}")
+                            self._logger.info("File saved successfully", extra={"output_path": output_path})
+                    else:
+                        error_msg = "Failed to save file"
+                        print(f"Error: {error_msg}", file=sys.stderr)
+                        if not force_overwrite:
+                            print("Use -f/--force to overwrite existing files")
                         sys.exit(1)
                 else:
                     # Print to stdout
                     print(output_content)
             
             else:
-                # Handle conversion failure
-                print(f"Error: {result.error_message}", file=sys.stderr)
+                # Handle conversion failure with improved error handling
+                error_msg = self._error_handler.get_user_friendly_message(result.error_message)
+                print(f"Error: {error_msg}", file=sys.stderr)
+                self._logger.error("Conversion failed", extra={
+                    "file_path": file_path,
+                    "error": str(result.error_message)
+                })
                 sys.exit(1)
                 
         except ImageConverterError as e:
-            print(f"Error: {e}", file=sys.stderr)
+            error_msg = self._error_handler.get_user_friendly_message(e)
+            print(f"Error: {error_msg}", file=sys.stderr)
+            self._logger.error("Application error", extra={"error": str(e)})
             sys.exit(1)
         except KeyboardInterrupt:
             print("\nOperation cancelled by user", file=sys.stderr)
+            self._logger.info("Operation cancelled by user")
             sys.exit(1)
         except Exception as e:
-            print(f"Unexpected error: {e}", file=sys.stderr)
+            error_response = self._error_handler.handle_error(e, {"operation": "single_file_conversion"})
+            print(f"Unexpected error: {error_response.user_message}", file=sys.stderr)
             sys.exit(1)  
   
     def process_directory(self, directory_path: str, output_path: Optional[str] = None,
@@ -167,9 +184,17 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
         try:
             if verbose:
                 print(f"Scanning directory: {directory_path}")
+                self._logger.info("Processing directory", extra={"directory_path": directory_path})
             
-            # Find all image files in the directory
-            image_files = self.file_handler.find_image_files(directory_path)
+            # Find all image files in the directory using the file handler service
+            find_result = self._file_handler.find_files(directory_path, "*.{png,jpg,jpeg,gif,bmp,webp}")
+            
+            if isinstance(find_result, list):
+                image_files = find_result
+            else:
+                error_msg = self._error_handler.get_user_friendly_message(str(find_result))
+                print(f"Error scanning directory: {error_msg}", file=sys.stderr)
+                sys.exit(1)
             
             if not image_files:
                 print(f"No image files found in directory: {directory_path}")
@@ -188,36 +213,43 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
                     print(f"\n[{i}/{len(image_files)}] Processing: {file_path}")
                 
                 try:
-                    result = self.converter.convert_to_base64(file_path)
+                    result = self._conversion_service.convert_image(file_path)
                     
                     if result.success:
                         successful_conversions += 1
+                        conversion_data = result
+                        
                         if verbose:
-                            print(f"  ✓ Success ({result.file_size:,} bytes → {len(result.base64_data):,} chars)")
+                            file_size = conversion_data.file_size
+                            base64_len = len(conversion_data.base64_data)
+                            print(f"  ✓ Success ({file_size:,} bytes → {base64_len:,} chars)")
                         
                         # Format result for output
                         file_separator = "=" * 60
                         file_result = f"{file_separator}\n"
                         file_result += f"File: {file_path}\n"
-                        file_result += f"MIME Type: {result.mime_type}\n"
-                        file_result += f"Size: {result.file_size:,} bytes\n"
-                        file_result += f"Base64 Data:\n{result.data_uri}\n"
+                        file_result += f"MIME Type: {conversion_data.mime_type}\n"
+                        file_result += f"Size: {conversion_data.file_size:,} bytes\n"
+                        
+                        data_uri = conversion_data.data_uri if conversion_data.data_uri else conversion_data.base64_data
+                        file_result += f"Base64 Data:\n{data_uri}\n"
                         
                         results.append(file_result)
                     else:
                         failed_conversions += 1
+                        error_msg = self._error_handler.get_user_friendly_message(result.error_message)
                         if verbose:
-                            print(f"  ✗ Failed: {result.error_message}")
+                            print(f"  ✗ Failed: {error_msg}")
                         else:
-                            print(f"Error processing {file_path}: {result.error_message}", file=sys.stderr)
+                            print(f"Error processing {file_path}: {error_msg}", file=sys.stderr)
                 
                 except Exception as e:
                     failed_conversions += 1
-                    error_msg = f"Unexpected error processing {file_path}: {e}"
+                    error_response = self._error_handler.handle_error(e, {"file_path": file_path})
                     if verbose:
-                        print(f"  ✗ {error_msg}")
+                        print(f"  ✗ {error_response.user_message}")
                     else:
-                        print(f"Error: {error_msg}", file=sys.stderr)
+                        print(f"Error: {error_response.user_message}", file=sys.stderr)
             
             # Display summary
             print(f"\nBatch processing completed:")
@@ -225,26 +257,29 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
             print(f"  Failed: {failed_conversions}")
             print(f"  Total: {len(image_files)}")
             
+            self._logger.info("Batch processing completed", extra={
+                "successful": successful_conversions,
+                "failed": failed_conversions,
+                "total": len(image_files)
+            })
+            
             if results:
                 # Combine all results
                 output_content = "\n".join(results)
                 
                 if output_path:
-                    # Save to file
-                    try:
-                        self.file_handler.save_to_file(
-                            output_content,
-                            output_path,
-                            overwrite=force_overwrite
-                        )
+                    # Save to file using the file handler service
+                    save_result = self._file_handler.save_file(output_content, output_path)
+                    
+                    if save_result:
                         if verbose:
                             print(f"✓ Results saved to: {output_path}")
-                    except FileExistsError:
-                        print(f"Error: Output file already exists: {output_path}")
-                        print("Use -f/--force to overwrite existing files")
-                        sys.exit(1)
-                    except Exception as e:
-                        print(f"Error saving file: {e}")
+                            self._logger.info("Batch results saved", extra={"output_path": output_path})
+                    else:
+                        error_msg = "Failed to save batch results"
+                        print(f"Error: {error_msg}", file=sys.stderr)
+                        if not force_overwrite:
+                            print("Use -f/--force to overwrite existing files")
                         sys.exit(1)
                 else:
                     # Print to stdout
@@ -255,13 +290,17 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
                 sys.exit(1)
                 
         except ImageConverterError as e:
-            print(f"Error: {e}", file=sys.stderr)
+            error_msg = self._error_handler.get_user_friendly_message(e)
+            print(f"Error: {error_msg}", file=sys.stderr)
+            self._logger.error("Directory processing error", extra={"error": str(e)})
             sys.exit(1)
         except KeyboardInterrupt:
             print("\nOperation cancelled by user", file=sys.stderr)
+            self._logger.info("Directory processing cancelled by user")
             sys.exit(1)
         except Exception as e:
-            print(f"Unexpected error: {e}", file=sys.stderr)
+            error_response = self._error_handler.handle_error(e, {"operation": "directory_processing"})
+            print(f"Unexpected error: {error_response.user_message}", file=sys.stderr)
             sys.exit(1)    
 
     def run(self) -> None:
@@ -275,10 +314,18 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
             # Parse command line arguments
             args = self.parse_arguments()
             
+            self._logger.info("CLI started", extra={
+                "input_path": args.input_path,
+                "output_path": args.output_path,
+                "verbose": args.verbose
+            })
+            
             # Validate input path exists
             import os
             if not os.path.exists(args.input_path):
-                print(f"Error: Input path does not exist: {args.input_path}", file=sys.stderr)
+                error_msg = f"Input path does not exist: {args.input_path}"
+                print(f"Error: {error_msg}", file=sys.stderr)
+                self._logger.error("Invalid input path", extra={"input_path": args.input_path})
                 sys.exit(1)
             
             # Determine if input is a file or directory
@@ -299,15 +346,19 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
                     verbose=args.verbose
                 )
             else:
-                print(f"Error: Input path is neither a file nor a directory: {args.input_path}", file=sys.stderr)
+                error_msg = f"Input path is neither a file nor a directory: {args.input_path}"
+                print(f"Error: {error_msg}", file=sys.stderr)
+                self._logger.error("Invalid input path type", extra={"input_path": args.input_path})
                 sys.exit(1)
                 
         except KeyboardInterrupt:
             print("\nOperation cancelled by user", file=sys.stderr)
+            self._logger.info("CLI cancelled by user")
             sys.exit(1)
         except SystemExit:
             # Re-raise SystemExit to preserve exit codes
             raise
         except Exception as e:
-            print(f"Unexpected error: {e}", file=sys.stderr)
+            error_response = self._error_handler.handle_error(e, {"operation": "cli_run"})
+            print(f"Unexpected error: {error_response.user_message}", file=sys.stderr)
             sys.exit(1)

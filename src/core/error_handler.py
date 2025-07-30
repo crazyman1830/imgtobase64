@@ -2,22 +2,24 @@
 Enhanced error handling system for the image converter.
 
 This module provides comprehensive error handling, user-friendly error messages,
-structured logging, and error recovery mechanisms.
+structured logging, and error recovery mechanisms integrated with the Result pattern.
 """
 import logging
 import traceback
 import time
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional, List, Callable, Type
 from dataclasses import dataclass
 from enum import Enum
 import json
 
-from ..models.models import (
-    ImageConverterError, ConversionError, UnsupportedFormatError,
-    FileNotFoundError, PermissionError, CorruptedFileError,
-    ProcessingQueueFullError, SecurityThreatDetectedError,
-    CacheError, RateLimitExceededError
-)
+from ..domain.exceptions.base import ImageConverterError, ErrorCode
+from ..domain.exceptions.validation import ValidationError, UnsupportedFormatError, FileSizeError
+from ..domain.exceptions.file_system import FileSystemError, FileNotFoundError, PermissionError
+from ..domain.exceptions.processing import ProcessingError, ConversionError, CorruptedFileError
+from ..domain.exceptions.security import SecurityError, SecurityThreatDetectedError
+from ..domain.exceptions.cache import CacheError, CacheWriteError, CacheReadError
+from ..domain.exceptions.queue import QueueError, ProcessingQueueFullError
+from ..core.base.result import Result
 
 
 class ErrorSeverity(Enum):
@@ -110,13 +112,13 @@ class ErrorHandler:
         
         return logger
     
-    def _setup_error_mappings(self) -> Dict[type, Dict[str, Any]]:
+    def _setup_error_mappings(self) -> Dict[Type[Exception], Dict[str, Any]]:
         """Set up error mappings for user-friendly messages."""
         return {
+            # File System Errors
             FileNotFoundError: {
                 'category': ErrorCategory.FILE_SYSTEM,
                 'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'The specified file could not be found. Please check the file path and try again.',
                 'recovery_suggestions': [
                     'Verify the file path is correct',
                     'Check if the file exists in the specified location',
@@ -126,81 +128,146 @@ class ErrorHandler:
             PermissionError: {
                 'category': ErrorCategory.FILE_SYSTEM,
                 'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'Permission denied. You do not have sufficient permissions to access this file.',
                 'recovery_suggestions': [
                     'Check file permissions',
                     'Run the application with appropriate privileges',
                     'Contact your system administrator'
                 ]
             },
+            FileSystemError: {
+                'category': ErrorCategory.FILE_SYSTEM,
+                'severity': ErrorSeverity.MEDIUM,
+                'recovery_suggestions': [
+                    'Check file system permissions',
+                    'Verify disk space availability',
+                    'Try again with a different file location'
+                ]
+            },
+            
+            # Validation Errors
             UnsupportedFormatError: {
                 'category': ErrorCategory.VALIDATION,
                 'severity': ErrorSeverity.LOW,
-                'user_message': 'The file format is not supported. Please use a supported image format.',
                 'recovery_suggestions': [
                     'Convert the file to a supported format (PNG, JPEG, WEBP, GIF, BMP)',
                     'Check the file extension matches the actual file format',
                     'Try with a different image file'
                 ]
             },
+            FileSizeError: {
+                'category': ErrorCategory.VALIDATION,
+                'severity': ErrorSeverity.LOW,
+                'recovery_suggestions': [
+                    'Reduce the file size',
+                    'Compress the image before processing',
+                    'Check the maximum allowed file size'
+                ]
+            },
+            ValidationError: {
+                'category': ErrorCategory.VALIDATION,
+                'severity': ErrorSeverity.LOW,
+                'recovery_suggestions': [
+                    'Check input parameters',
+                    'Verify file format and content',
+                    'Review the validation requirements'
+                ]
+            },
+            
+            # Processing Errors
             CorruptedFileError: {
                 'category': ErrorCategory.PROCESSING,
                 'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'The image file appears to be corrupted or invalid.',
                 'recovery_suggestions': [
                     'Try with a different image file',
                     'Re-download or re-create the image file',
                     'Check if the file was properly transferred'
                 ]
             },
+            ConversionError: {
+                'category': ErrorCategory.PROCESSING,
+                'severity': ErrorSeverity.MEDIUM,
+                'recovery_suggestions': [
+                    'Try with a different image file',
+                    'Check if the image file is valid',
+                    'Reduce image size or complexity'
+                ]
+            },
+            ProcessingError: {
+                'category': ErrorCategory.PROCESSING,
+                'severity': ErrorSeverity.MEDIUM,
+                'recovery_suggestions': [
+                    'Retry the operation',
+                    'Check system resources',
+                    'Try with a simpler image'
+                ]
+            },
+            
+            # Security Errors
             SecurityThreatDetectedError: {
                 'category': ErrorCategory.SECURITY,
                 'severity': ErrorSeverity.HIGH,
-                'user_message': 'A potential security threat was detected in the file. Processing has been blocked.',
                 'recovery_suggestions': [
                     'Scan the file with antivirus software',
                     'Use a different, trusted image file',
                     'Contact support if you believe this is a false positive'
                 ]
             },
-            ProcessingQueueFullError: {
-                'category': ErrorCategory.SYSTEM,
-                'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'The processing queue is currently full. Please try again later.',
+            SecurityError: {
+                'category': ErrorCategory.SECURITY,
+                'severity': ErrorSeverity.HIGH,
                 'recovery_suggestions': [
-                    'Wait a few moments and try again',
-                    'Process fewer files at once',
-                    'Check system resources'
+                    'Review security settings',
+                    'Use trusted files only',
+                    'Contact security team if needed'
                 ]
             },
-            CacheError: {
+            
+            # Cache Errors
+            CacheWriteError: {
                 'category': ErrorCategory.CACHE,
                 'severity': ErrorSeverity.LOW,
-                'user_message': 'There was an issue with the cache system. Your request will be processed without caching.',
                 'recovery_suggestions': [
                     'Clear the application cache',
                     'Check available disk space',
                     'Restart the application if the problem persists'
                 ]
             },
-            RateLimitExceededError: {
-                'category': ErrorCategory.SYSTEM,
-                'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'Too many requests. Please wait before trying again.',
+            CacheReadError: {
+                'category': ErrorCategory.CACHE,
+                'severity': ErrorSeverity.LOW,
                 'recovery_suggestions': [
-                    'Wait a few minutes before retrying',
-                    'Reduce the frequency of requests',
-                    'Contact support if you need higher limits'
+                    'Clear the application cache',
+                    'Check cache file permissions',
+                    'Restart the application if the problem persists'
                 ]
             },
-            ConversionError: {
-                'category': ErrorCategory.PROCESSING,
-                'severity': ErrorSeverity.MEDIUM,
-                'user_message': 'An error occurred during image processing.',
+            CacheError: {
+                'category': ErrorCategory.CACHE,
+                'severity': ErrorSeverity.LOW,
                 'recovery_suggestions': [
-                    'Try with a different image file',
-                    'Check if the image file is valid',
-                    'Reduce image size or complexity'
+                    'Clear the application cache',
+                    'Check available disk space',
+                    'Restart the application if the problem persists'
+                ]
+            },
+            
+            # Queue Errors
+            ProcessingQueueFullError: {
+                'category': ErrorCategory.SYSTEM,
+                'severity': ErrorSeverity.MEDIUM,
+                'recovery_suggestions': [
+                    'Wait a few moments and try again',
+                    'Process fewer files at once',
+                    'Check system resources'
+                ]
+            },
+            QueueError: {
+                'category': ErrorCategory.SYSTEM,
+                'severity': ErrorSeverity.MEDIUM,
+                'recovery_suggestions': [
+                    'Retry the operation',
+                    'Check system status',
+                    'Contact support if the problem persists'
                 ]
             }
         }
@@ -209,8 +276,10 @@ class ErrorHandler:
         """Set up automatic recovery strategies for different error types."""
         self.recovery_strategies = {
             CacheError: self._recover_from_cache_error,
+            CacheWriteError: self._recover_from_cache_error,
+            CacheReadError: self._recover_from_cache_error,
             ProcessingQueueFullError: self._recover_from_queue_full,
-            RateLimitExceededError: self._recover_from_rate_limit
+            QueueError: self._recover_from_queue_error
         }
     
     def handle_error(
@@ -243,6 +312,13 @@ class ErrorHandler:
         error_type = type(exception)
         mapping = self.error_mappings.get(error_type, {})
         
+        # Extract user message from domain exception if available
+        user_message = mapping.get('user_message')
+        if isinstance(exception, ImageConverterError):
+            user_message = exception.user_message
+        elif user_message is None:
+            user_message = 'An unexpected error occurred.'
+        
         # Create error context
         error_context = ErrorContext(
             error_id=error_id,
@@ -250,7 +326,7 @@ class ErrorHandler:
             severity=mapping.get('severity', ErrorSeverity.MEDIUM),
             category=mapping.get('category', ErrorCategory.SYSTEM),
             original_exception=exception,
-            user_message=mapping.get('user_message', 'An unexpected error occurred.'),
+            user_message=user_message,
             technical_message=str(exception),
             file_path=file_path,
             operation=operation,
@@ -338,19 +414,22 @@ class ErrorHandler:
             'message': 'Queue is full, retry recommended'
         }
     
-    def _recover_from_rate_limit(self, error_context: ErrorContext) -> Dict[str, Any]:
-        """Recovery strategy for rate limit errors."""
-        self.logger.info(f"Attempting rate limit recovery for {error_context.error_id}")
+    def _recover_from_queue_error(self, error_context: ErrorContext) -> Dict[str, Any]:
+        """Recovery strategy for general queue errors."""
+        self.logger.info(f"Attempting queue error recovery for {error_context.error_id}")
         
-        # Could implement exponential backoff
+        # Could implement retry logic or alternative processing
         return {
-            'strategy': 'exponential_backoff',
+            'strategy': 'retry_with_delay',
             'success': False,
-            'message': 'Rate limit exceeded, backoff required'
+            'message': 'Queue error occurred, retry recommended'
         }
     
     def get_user_friendly_message(self, exception: Exception) -> str:
         """Get a user-friendly error message for an exception."""
+        if isinstance(exception, ImageConverterError):
+            return exception.user_message
+        
         error_type = type(exception)
         mapping = self.error_mappings.get(error_type, {})
         return mapping.get('user_message', 'An unexpected error occurred. Please try again.')
@@ -360,6 +439,69 @@ class ErrorHandler:
         error_type = type(exception)
         mapping = self.error_mappings.get(error_type, {})
         return mapping.get('recovery_suggestions', ['Contact support for assistance'])
+    
+    def handle_with_result(
+        self,
+        operation: Callable[[], Any],
+        operation_name: Optional[str] = None,
+        file_path: Optional[str] = None,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Result[Any, ErrorContext]:
+        """
+        Execute an operation and return a Result with error handling.
+        
+        Args:
+            operation: The operation to execute
+            operation_name: Name of the operation for logging
+            file_path: File path involved (if applicable)
+            user_id: User identifier (if applicable)
+            session_id: Session identifier (if applicable)
+            metadata: Additional metadata
+            
+        Returns:
+            Result containing either the operation result or error context
+        """
+        try:
+            result = operation()
+            return Result.success(result)
+        except Exception as e:
+            error_context = self.handle_error(
+                e, operation_name, file_path, user_id, session_id, metadata
+            )
+            return Result.failure(error_context)
+    
+    def wrap_result_error(self, result: Result, operation: Optional[str] = None) -> Result:
+        """
+        Wrap a Result's error with proper error handling.
+        
+        Args:
+            result: The Result to wrap
+            operation: Operation name for context
+            
+        Returns:
+            Result with wrapped error context
+        """
+        if result.is_success:
+            return result
+        
+        # If the error is already an ErrorContext, return as is
+        if isinstance(result.error, ErrorContext):
+            return result
+        
+        # If the error is an Exception, handle it
+        if isinstance(result.error, Exception):
+            error_context = self.handle_error(result.error, operation)
+            return Result.failure(error_context)
+        
+        # For other error types, create a generic error context
+        generic_error = ImageConverterError(
+            message=str(result.error),
+            error_code=ErrorCode.UNKNOWN_ERROR
+        )
+        error_context = self.handle_error(generic_error, operation)
+        return Result.failure(error_context)
     
     def get_error_statistics(self) -> Dict[str, Any]:
         """Get error statistics for monitoring."""
@@ -432,4 +574,18 @@ def handle_error(
     """Convenience function to handle errors using the global error handler."""
     return get_error_handler().handle_error(
         exception, operation, file_path, user_id, session_id, metadata
+    )
+
+
+def handle_with_result(
+    operation: Callable[[], Any],
+    operation_name: Optional[str] = None,
+    file_path: Optional[str] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> Result[Any, ErrorContext]:
+    """Convenience function to execute operations with Result pattern error handling."""
+    return get_error_handler().handle_with_result(
+        operation, operation_name, file_path, user_id, session_id, metadata
     )

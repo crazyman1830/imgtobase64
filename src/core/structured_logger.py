@@ -1,19 +1,20 @@
 """
-Structured logging system for the image converter.
+Improved structured logging system for the image converter.
 
-This module provides comprehensive structured logging with JSON formatting,
-log rotation, performance metrics, and integration with the error handling system.
+This module provides simplified yet comprehensive structured logging with JSON formatting,
+log rotation, performance metrics, and seamless integration with the error handling system.
 """
 import logging
 import logging.handlers
 import json
 import time
 import os
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
 import threading
+from contextlib import contextmanager
 
 
 class LogLevel(Enum):
@@ -29,19 +30,16 @@ class LogLevel(Enum):
 
 
 @dataclass
-class LogEntry:
-    """Structured log entry."""
-    timestamp: float
-    level: str
-    logger_name: str
-    message: str
+class LogContext:
+    """Context information for structured logging."""
     operation: Optional[str] = None
+    operation_id: Optional[str] = None
     file_path: Optional[str] = None
     user_id: Optional[str] = None
     session_id: Optional[str] = None
+    error_id: Optional[str] = None
     processing_time: Optional[float] = None
     memory_usage: Optional[int] = None
-    error_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
@@ -49,38 +47,68 @@ class LogEntry:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
 
+@dataclass
+class LogEntry:
+    """Structured log entry."""
+    timestamp: float
+    level: str
+    logger_name: str
+    message: str
+    context: Optional[LogContext] = None
+    exception_info: Optional[str] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        result = {
+            'timestamp': self.timestamp,
+            'level': self.level,
+            'logger': self.logger_name,
+            'message': self.message
+        }
+        
+        if self.context:
+            result.update(self.context.to_dict())
+        
+        if self.exception_info:
+            result['exception'] = self.exception_info
+            
+        return result
+
+
 class JSONFormatter(logging.Formatter):
-    """JSON formatter for structured logging."""
+    """Improved JSON formatter for structured logging."""
     
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
-        # Extract custom fields from record
+        # Extract context from record
+        context = LogContext(
+            operation=getattr(record, 'operation', None),
+            operation_id=getattr(record, 'operation_id', None),
+            file_path=getattr(record, 'file_path', None),
+            user_id=getattr(record, 'user_id', None),
+            session_id=getattr(record, 'session_id', None),
+            error_id=getattr(record, 'error_id', None),
+            processing_time=getattr(record, 'processing_time', None),
+            memory_usage=getattr(record, 'memory_usage', None),
+            metadata=getattr(record, 'metadata', None)
+        )
+        
+        # Create log entry
         log_entry = LogEntry(
             timestamp=record.created,
             level=record.levelname,
             logger_name=record.name,
             message=record.getMessage(),
-            operation=getattr(record, 'operation', None),
-            file_path=getattr(record, 'file_path', None),
-            user_id=getattr(record, 'user_id', None),
-            session_id=getattr(record, 'session_id', None),
-            processing_time=getattr(record, 'processing_time', None),
-            memory_usage=getattr(record, 'memory_usage', None),
-            error_id=getattr(record, 'error_id', None),
-            metadata=getattr(record, 'metadata', None)
+            context=context if any(context.to_dict().values()) else None,
+            exception_info=self.formatException(record.exc_info) if record.exc_info else None
         )
         
-        # Add exception info if present
-        if record.exc_info:
-            log_entry.metadata = log_entry.metadata or {}
-            log_entry.metadata['exception'] = self.formatException(record.exc_info)
-        
-        return json.dumps(log_entry.to_dict(), default=str)
+        return json.dumps(log_entry.to_dict(), default=str, ensure_ascii=False)
 
 
 class StructuredLogger:
     """
-    Enhanced structured logger with performance tracking and custom log levels.
+    Improved structured logger with simplified interface and better context management.
     """
     
     def __init__(
@@ -114,6 +142,10 @@ class StructuredLogger:
         # Performance tracking
         self.operation_times: Dict[str, List[float]] = {}
         self.operation_lock = threading.Lock()
+        
+        # Context stack for nested operations
+        self._context_stack: List[LogContext] = []
+        self._context_lock = threading.Lock()
     
     def _add_custom_levels(self):
         """Add custom log levels."""
@@ -202,45 +234,59 @@ class StructuredLogger:
         performance_handler.setFormatter(JSONFormatter())
         self.logger.addHandler(performance_handler)
     
-    def log_operation_start(
+    @contextmanager
+    def operation_context(
         self,
         operation: str,
         file_path: Optional[str] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> str:
-        """Log the start of an operation and return operation ID."""
-        operation_id = f"{operation}_{int(time.time() * 1000)}"
-        
-        self.logger.info(
-            f"Starting operation: {operation}",
-            extra={
-                'operation': operation,
-                'operation_id': operation_id,
-                'file_path': file_path,
-                'user_id': user_id,
-                'session_id': session_id,
-                'metadata': metadata
-            }
-        )
-        
-        return operation_id
-    
-    def log_operation_end(
-        self,
-        operation: str,
-        operation_id: str,
-        success: bool,
-        processing_time: float,
-        file_path: Optional[str] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        error_message: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ):
-        """Log the end of an operation."""
-        # Track operation time for statistics
+        """Context manager for logging operations with automatic timing."""
+        operation_id = f"{operation}_{int(time.time() * 1000)}"
+        start_time = time.time()
+        
+        # Create context
+        context = LogContext(
+            operation=operation,
+            operation_id=operation_id,
+            file_path=file_path,
+            user_id=user_id,
+            session_id=session_id,
+            metadata=metadata
+        )
+        
+        # Push context to stack
+        with self._context_lock:
+            self._context_stack.append(context)
+        
+        try:
+            self.info(f"Starting operation: {operation}", context=context)
+            yield operation_id
+            
+            # Success
+            processing_time = time.time() - start_time
+            context.processing_time = processing_time
+            self._track_operation_time(operation, processing_time)
+            self.info(f"Completed operation: {operation} (success)", context=context)
+            
+        except Exception as e:
+            # Failure
+            processing_time = time.time() - start_time
+            context.processing_time = processing_time
+            context.metadata = context.metadata or {}
+            context.metadata['error'] = str(e)
+            self.error(f"Failed operation: {operation}", context=context, exc_info=True)
+            raise
+        finally:
+            # Pop context from stack
+            with self._context_lock:
+                if self._context_stack and self._context_stack[-1].operation_id == operation_id:
+                    self._context_stack.pop()
+    
+    def _track_operation_time(self, operation: str, processing_time: float):
+        """Track operation time for statistics."""
         with self.operation_lock:
             if operation not in self.operation_times:
                 self.operation_times[operation] = []
@@ -249,44 +295,88 @@ class StructuredLogger:
             # Keep only last 100 times for each operation
             if len(self.operation_times[operation]) > 100:
                 self.operation_times[operation] = self.operation_times[operation][-100:]
+    
+    def _get_current_context(self) -> Optional[LogContext]:
+        """Get the current context from the stack."""
+        with self._context_lock:
+            return self._context_stack[-1] if self._context_stack else None
+    
+    def _merge_contexts(self, provided_context: Optional[LogContext]) -> Optional[LogContext]:
+        """Merge provided context with current context."""
+        current_context = self._get_current_context()
         
-        level = logging.INFO if success else logging.ERROR
-        message = f"Completed operation: {operation} ({'success' if success else 'failed'})"
+        if not current_context and not provided_context:
+            return None
         
-        extra_data = {
-            'operation': operation,
-            'operation_id': operation_id,
-            'success': success,
-            'processing_time': processing_time,
-            'file_path': file_path,
-            'user_id': user_id,
-            'session_id': session_id,
-            'metadata': metadata
-        }
+        if not current_context:
+            return provided_context
+        
+        if not provided_context:
+            return current_context
+        
+        # Merge contexts, with provided context taking precedence
+        merged = LogContext()
+        for field in ['operation', 'operation_id', 'file_path', 'user_id', 'session_id', 
+                     'error_id', 'processing_time', 'memory_usage']:
+            current_value = getattr(current_context, field)
+            provided_value = getattr(provided_context, field)
+            setattr(merged, field, provided_value if provided_value is not None else current_value)
+        
+        # Merge metadata
+        merged.metadata = {}
+        if current_context.metadata:
+            merged.metadata.update(current_context.metadata)
+        if provided_context.metadata:
+            merged.metadata.update(provided_context.metadata)
+        
+        return merged if any(merged.to_dict().values()) else None
+    
+    def log_operation_result(
+        self,
+        operation: str,
+        success: bool,
+        processing_time: Optional[float] = None,
+        error_message: Optional[str] = None,
+        context: Optional[LogContext] = None
+    ):
+        """Log the result of an operation."""
+        if processing_time:
+            self._track_operation_time(operation, processing_time)
+        
+        result_context = context or LogContext()
+        result_context.operation = result_context.operation or operation
+        result_context.processing_time = result_context.processing_time or processing_time
         
         if error_message:
-            extra_data['error_message'] = error_message
+            result_context.metadata = result_context.metadata or {}
+            result_context.metadata['error_message'] = error_message
         
-        self.logger.log(level, message, extra=extra_data)
+        message = f"Operation {operation} {'completed successfully' if success else 'failed'}"
+        
+        if success:
+            self.info(message, context=result_context)
+        else:
+            self.error(message, context=result_context)
     
     def log_performance_metric(
         self,
         metric_name: str,
-        value: float,
+        value: Union[float, int],
         unit: str,
-        operation: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        context: Optional[LogContext] = None
     ):
         """Log a performance metric."""
-        self.logger.performance(
+        metric_context = context or LogContext()
+        metric_context.metadata = metric_context.metadata or {}
+        metric_context.metadata.update({
+            'metric_name': metric_name,
+            'metric_value': value,
+            'metric_unit': unit
+        })
+        
+        self.performance(
             f"Performance metric: {metric_name} = {value} {unit}",
-            extra={
-                'metric_name': metric_name,
-                'metric_value': value,
-                'metric_unit': unit,
-                'operation': operation,
-                'metadata': metadata
-            }
+            context=metric_context
         )
     
     def log_security_event(
@@ -294,47 +384,37 @@ class StructuredLogger:
         event_type: str,
         severity: str,
         description: str,
-        file_path: Optional[str] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        context: Optional[LogContext] = None
     ):
         """Log a security event."""
-        self.logger.security(
+        security_context = context or LogContext()
+        security_context.metadata = security_context.metadata or {}
+        security_context.metadata.update({
+            'event_type': event_type,
+            'severity': severity,
+            'description': description
+        })
+        
+        self.security(
             f"Security event: {event_type} - {description}",
-            extra={
-                'event_type': event_type,
-                'severity': severity,
-                'description': description,
-                'file_path': file_path,
-                'user_id': user_id,
-                'session_id': session_id,
-                'metadata': metadata
-            }
+            context=security_context
         )
     
     def log_error_with_context(
         self,
         error_id: str,
         exception: Exception,
-        operation: Optional[str] = None,
-        file_path: Optional[str] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        context: Optional[LogContext] = None
     ):
         """Log an error with full context."""
-        self.logger.error(
+        error_context = context or LogContext()
+        error_context.error_id = error_id
+        error_context.metadata = error_context.metadata or {}
+        error_context.metadata['exception_type'] = type(exception).__name__
+        
+        self.error(
             f"Error {error_id}: {str(exception)}",
-            extra={
-                'error_id': error_id,
-                'exception_type': type(exception).__name__,
-                'operation': operation,
-                'file_path': file_path,
-                'user_id': user_id,
-                'session_id': session_id,
-                'metadata': metadata
-            },
+            context=error_context,
             exc_info=True
         )
     
@@ -360,29 +440,59 @@ class StructuredLogger:
         with self.operation_lock:
             self.operation_times.clear()
     
-    def debug(self, message: str, **kwargs):
-        """Log debug message."""
-        self.logger.debug(message, extra=kwargs)
+    def _log_with_context(
+        self, 
+        level: int, 
+        message: str, 
+        context: Optional[LogContext] = None,
+        exc_info: bool = False,
+        **kwargs
+    ):
+        """Internal method to log with context merging."""
+        # Merge contexts
+        final_context = self._merge_contexts(context)
+        
+        # Prepare extra data
+        extra = {}
+        if final_context:
+            extra.update(final_context.to_dict())
+        
+        # Add any additional kwargs
+        extra.update(kwargs)
+        
+        self.logger.log(level, message, extra=extra, exc_info=exc_info)
     
-    def info(self, message: str, **kwargs):
-        """Log info message."""
-        self.logger.info(message, extra=kwargs)
-    
-    def warning(self, message: str, **kwargs):
-        """Log warning message."""
-        self.logger.warning(message, extra=kwargs)
-    
-    def error(self, message: str, **kwargs):
-        """Log error message."""
-        self.logger.error(message, extra=kwargs)
-    
-    def critical(self, message: str, **kwargs):
-        """Log critical message."""
-        self.logger.critical(message, extra=kwargs)
-    
-    def trace(self, message: str, **kwargs):
+    def trace(self, message: str, context: Optional[LogContext] = None, **kwargs):
         """Log trace message."""
-        self.logger.trace(message, extra=kwargs)
+        self._log_with_context(LogLevel.TRACE.value, message, context, **kwargs)
+    
+    def debug(self, message: str, context: Optional[LogContext] = None, **kwargs):
+        """Log debug message."""
+        self._log_with_context(logging.DEBUG, message, context, **kwargs)
+    
+    def info(self, message: str, context: Optional[LogContext] = None, **kwargs):
+        """Log info message."""
+        self._log_with_context(logging.INFO, message, context, **kwargs)
+    
+    def warning(self, message: str, context: Optional[LogContext] = None, **kwargs):
+        """Log warning message."""
+        self._log_with_context(logging.WARNING, message, context, **kwargs)
+    
+    def error(self, message: str, context: Optional[LogContext] = None, exc_info: bool = False, **kwargs):
+        """Log error message."""
+        self._log_with_context(logging.ERROR, message, context, exc_info=exc_info, **kwargs)
+    
+    def critical(self, message: str, context: Optional[LogContext] = None, exc_info: bool = False, **kwargs):
+        """Log critical message."""
+        self._log_with_context(logging.CRITICAL, message, context, exc_info=exc_info, **kwargs)
+    
+    def security(self, message: str, context: Optional[LogContext] = None, **kwargs):
+        """Log security event."""
+        self._log_with_context(LogLevel.SECURITY.value, message, context, **kwargs)
+    
+    def performance(self, message: str, context: Optional[LogContext] = None, **kwargs):
+        """Log performance metric."""
+        self._log_with_context(LogLevel.PERFORMANCE.value, message, context, **kwargs)
 
 
 # Global logger instances
@@ -411,3 +521,28 @@ def get_performance_logger() -> StructuredLogger:
 def get_security_logger() -> StructuredLogger:
     """Get the security logger."""
     return get_structured_logger('image_converter_security')
+
+
+def create_log_context(
+    operation: Optional[str] = None,
+    operation_id: Optional[str] = None,
+    file_path: Optional[str] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    error_id: Optional[str] = None,
+    processing_time: Optional[float] = None,
+    memory_usage: Optional[int] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> LogContext:
+    """Convenience function to create a LogContext."""
+    return LogContext(
+        operation=operation,
+        operation_id=operation_id,
+        file_path=file_path,
+        user_id=user_id,
+        session_id=session_id,
+        error_id=error_id,
+        processing_time=processing_time,
+        memory_usage=memory_usage,
+        metadata=metadata
+    )
