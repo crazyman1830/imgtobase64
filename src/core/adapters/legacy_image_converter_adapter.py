@@ -89,14 +89,22 @@ class LegacyImageConverterAdapter(IImageConverter):
             # Convert to base64
             base64_data = base64.b64encode(image_data).decode('utf-8')
             
+            # Get MIME type
+            mime_type = self.get_mime_type(file_path)
+            
+            # Create data URI
+            data_uri = f"data:{mime_type};base64,{base64_data}"
+            
             # Create result
             result = ConversionResult(
                 file_path=file_path,
                 success=True,
                 base64_data=base64_data,
+                data_uri=data_uri,
                 format=image_format,
                 size=image_size,
-                file_size=len(image_data)
+                file_size=len(image_data),
+                mime_type=mime_type
             )
             
             # Set processing time

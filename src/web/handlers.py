@@ -177,10 +177,13 @@ class WebHandlers:
                 # Prepare response data
                 response_data = {
                     'success': True,
-                    'base64_data': conversion_result.data_uri or conversion_result.base64_data,
+                    'base64': conversion_result.data_uri or conversion_result.base64_data,
+                    'base64_data': conversion_result.base64_data,
+                    'data_uri': conversion_result.data_uri,
                     'format': conversion_result.format,
                     'size': conversion_result.size,
                     'file_size': conversion_result.file_size,
+                    'mime_type': conversion_result.mime_type,
                     'processing_time': conversion_result.processing_time,
                     'cache_hit': getattr(conversion_result, 'cache_hit', False),
                     'metadata': image_metadata
@@ -302,12 +305,17 @@ class WebHandlers:
             
             # Prepare response data
             response_data = {
-                'base64': conversion_result.base64_data,
+                'base64': conversion_result.data_uri or conversion_result.base64_data,
+                'base64_data': conversion_result.base64_data,
+                'data_uri': conversion_result.data_uri,
                 'original_format': original_metadata.get('format', 'Unknown'),
                 'original_size': original_metadata.get('size', (0, 0)),
                 'processed_format': conversion_result.format,
                 'processed_size': conversion_result.size,
+                'format': conversion_result.format,
+                'size': conversion_result.size,
                 'file_size': conversion_result.file_size,
+                'mime_type': conversion_result.mime_type,
                 'processing_time': conversion_result.processing_time,
                 'cache_hit': getattr(conversion_result, 'cache_hit', False),
                 'processing_options': self._serialize_processing_options(processing_options)
