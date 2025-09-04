@@ -26,6 +26,7 @@ from src.cli import CLI
 from src.web.refactored_app import create_app
 from src.core.services.image_conversion_service import ImageConversionService
 from src.domain.exceptions.base import ImageConverterError
+from src.domain.exceptions.processing import ProcessingError
 
 
 class TestImageCreator:
@@ -404,6 +405,19 @@ class TestServiceLayerIntegration:
         assert error_context is not None
         assert hasattr(error_context, 'user_message')
         assert len(error_context.user_message) > 0
+
+    def test_conversion_of_invalid_image_file(self):
+        """Test that converting a corrupted/invalid image file raises an error."""
+        # Create an invalid image file (just a text file)
+        invalid_image_content = b"this is not a webp file"
+        invalid_image_file = tempfile.NamedTemporaryFile(delete=False, suffix='.webp')
+        invalid_image_file.write(invalid_image_content)
+        invalid_image_file.close()
+        self.test_images.append(invalid_image_file.name)
+
+        # Expect a ProcessingError when trying to convert this file
+        with pytest.raises(ProcessingError):
+            self.conversion_service.convert_image(invalid_image_file.name)
 
 
 class TestBackwardCompatibility:

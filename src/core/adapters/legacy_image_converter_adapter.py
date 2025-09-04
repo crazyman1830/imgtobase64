@@ -76,15 +76,11 @@ class LegacyImageConverterAdapter(IImageConverter):
             # Get image info
             try:
                 with Image.open(file_path) as img:
+                    img.verify()  # Verify the image data
                     image_format = img.format
                     image_size = img.size
-            except Exception:
-                # Fallback to extension-based format detection
-                ext = os.path.splitext(file_path)[1].lower()
-                format_map = {'.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', 
-                             '.gif': 'GIF', '.bmp': 'BMP', '.webp': 'WEBP'}
-                image_format = format_map.get(ext, 'Unknown')
-                image_size = (0, 0)
+            except Exception as e:
+                raise ProcessingError(f"Invalid or corrupted image file: {file_path}") from e
             
             # Convert to base64
             base64_data = base64.b64encode(image_data).decode('utf-8')
