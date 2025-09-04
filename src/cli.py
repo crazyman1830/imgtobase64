@@ -130,7 +130,9 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
                 
                 if output_path:
                     # Save to file using the file handler service
-                    save_result = self._file_handler.save_file(output_content, output_path)
+                    save_result = self._file_handler.save_file(
+                        output_content, output_path, overwrite=force_overwrite
+                    )
                     
                     if save_result:
                         if verbose:
@@ -269,7 +271,9 @@ Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
                 
                 if output_path:
                     # Save to file using the file handler service
-                    save_result = self._file_handler.save_file(output_content, output_path)
+                    save_result = self._file_handler.save_file(
+                        output_content, output_path, overwrite=force_overwrite
+                    )
                     
                     if save_result:
                         if verbose:
