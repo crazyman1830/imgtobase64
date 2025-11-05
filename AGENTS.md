@@ -8,7 +8,7 @@ Python-based image conversion tool with dependency injection architecture, web U
 
 - **CLI**: `python main.py image.png` or `python main.py image.png -o output.txt`
 - **Web**: `python run_web.py` then visit http://localhost:5000
-- **Test**: `python -m pytest tests/` or `python tests/integration/run_functionality_tests.py`
+- **Demo**: `python performance_demo.py` for performance demonstration
 - **Dependencies**: `pip install -r requirements.txt`
 
 ## Core Features
@@ -37,6 +37,7 @@ Python-based image conversion tool with dependency injection architecture, web U
 ├── config.json                   # Dev config
 ├── config.production.json        # Production config
 ├── requirements.txt              # Dependencies
+├── performance_demo.py           # Performance demonstration
 ├── src/
 │   ├── cli.py                    # CLI interface
 │   ├── core/
@@ -45,12 +46,9 @@ Python-based image conversion tool with dependency injection architecture, web U
 │   │   ├── interfaces/           # Service contracts
 │   │   ├── config/               # Configuration management
 │   │   └── error_handler.py      # Centralized error handling
-│   ├── web/web_app.py           # Flask application
+│   ├── web/web_app.py           # Flask application (legacy + new architecture)
 │   ├── models/                   # Data models (ConversionResult, ProcessingOptions)
 │   └── domain/exceptions/        # Domain-specific exceptions
-├── tests/
-│   ├── integration/              # End-to-end tests
-│   └── unit/                     # Component tests
 └── docs/                         # API docs, architecture guides
 ```
 
@@ -137,34 +135,18 @@ max_size = config.security.max_file_size_mb
 cache_enabled = config.cache.enabled
 ```
 
-## Testing Instructions
+## Performance Testing
 
-- **Run All Tests**: `python -m pytest tests/`
-- **Integration Only**: `python -m pytest tests/integration/`  
-- **Functionality Tests**: `python tests/integration/run_functionality_tests.py`
-- **Single Test**: `python -m pytest tests/unit/test_specific.py::test_function_name`
+- **Performance Demo**: `python performance_demo.py`
+  - Demonstrates batch processing performance
+  - Shows memory optimization effects
+  - Tests parallel processing efficiency
 
-**Unit Test Pattern**:
-```python
-from unittest.mock import Mock
-
-def test_service():
-    mock_converter = Mock(spec=IImageConverter)
-    service = ImageConversionService(mock_converter)
-    result = service.convert_image("test.jpg")
-    assert result.success
-```
-
-**Integration Test Pattern**:
-```python
-def test_end_to_end():
-    container = DIContainer.create_for_testing()
-    service = container.get('image_conversion_service')
-    result = service.convert_image("test_image.jpg")
-    assert result.success and result.base64_data
-```
-
-Always run tests before committing. Fix any failures in the test suite before merging.
+**Manual Testing**:
+- Test single file conversion via CLI
+- Test batch processing via web UI
+- Monitor memory usage during large file processing
+- Verify WebSocket real-time updates
 
 ## Performance & Configuration
 

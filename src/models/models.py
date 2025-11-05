@@ -9,14 +9,14 @@ from .processing_options import ProcessingOptions, SecurityScanResult
 @dataclass
 class ConversionResult:
     """
-    Data class to hold the result of an image conversion operation.
+    Result of an image conversion operation.
     
     Attributes:
         file_path: Path to the original image file
         success: Whether the conversion was successful
-        base64_data: The base64 encoded string (empty if conversion failed)
-        data_uri: Complete data URI format string (empty if conversion failed)
-        error_message: Error message if conversion failed (empty if successful)
+        base64_data: Base64 encoded string (empty if failed)
+        data_uri: Complete data URI format string (empty if failed)
+        error_message: Error message if failed (empty if successful)
         file_size: Size of the original file in bytes
         mime_type: MIME type of the image file
         image: PIL Image object (for base64 to image conversion)
@@ -35,9 +35,9 @@ class ConversionResult:
     error_message: str = ""
     file_size: int = 0
     mime_type: str = ""
-    image: object = None
+    image: Optional[object] = None
     format: str = ""
-    size: tuple = (0, 0)
+    size: tuple[int, int] = (0, 0)
     processing_options: Optional[ProcessingOptions] = None
     processing_time: float = 0.0
     cache_hit: bool = False

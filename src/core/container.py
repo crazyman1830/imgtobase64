@@ -150,6 +150,9 @@ class DIContainer:
             Service instance
             
         Raises:
+            KeyError: If service is not registered
+            
+        Raises:
             ImageConverterError: If service is not registered or creation fails
         """
         try:

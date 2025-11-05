@@ -1,30 +1,26 @@
 """
-웹 기반 UI를 위한 Flask 애플리케이션 (리팩토링된 버전과 통합)
+웹 기반 UI를 위한 Flask 애플리케이션
+
+Note: 이 파일은 레거시 코드와 새 아키텍처가 혼재되어 있습니다.
+향후 완전히 새 아키텍처로 마이그레이션 예정입니다.
 """
 import os
-import base64
-import uuid
-import asyncio
-import threading
-import time
-from flask import Flask, render_template, request, jsonify, send_file
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage
-from io import BytesIO
-from PIL import Image
+import atexit
+import signal
 import tempfile
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any
 
-# Legacy imports for backward compatibility
-from ..core.converter import ImageConverter
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit, join_room
+from PIL import Image
+
+# Legacy components (배치 처리에 사용)
 from ..core.image_processor import ImageProcessor
 from ..core.multi_file_handler import MultiFileHandler
-from ..models.models import ConversionResult, ConversionError
-from ..models.processing_options import ProcessingOptions, ProgressInfo
+from ..models.processing_options import ProcessingOptions
 from .async_handler import AsyncProcessingHandler, WebSocketProgressTracker
 
-# New refactored imports
+# New DI-based architecture (단일 파일 처리에 사용)
 from ..core.container import DIContainer
 from .handlers import WebHandlers
 from .middleware import ErrorHandlingMiddleware, SecurityMiddleware
@@ -40,13 +36,12 @@ app.config['SECRET_KEY'] = getattr(config, 'secret_key', 'your-secret-key-here')
 # Initialize SocketIO with eventlet for async support
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# Initialize refactored components
+# Initialize new DI-based components (단일 파일 처리용)
 web_handlers = WebHandlers(container)
 error_middleware = ErrorHandlingMiddleware(container)
 security_middleware = SecurityMiddleware(container)
 
-# Initialize legacy components for backward compatibility
-converter = ImageConverter()
+# Initialize legacy components (배치 처리용 - 향후 마이그레이션 예정)
 image_processor = ImageProcessor()
 multi_file_handler = MultiFileHandler(max_concurrent=3, max_queue_size=100)
 
@@ -547,10 +542,6 @@ def _process_image_with_options(file_path: str, options: ProcessingOptions) -> C
             error_message=str(e)
         )
 
-
-# Graceful shutdown handler
-import atexit
-import signal
 
 def cleanup_on_exit():
     """애플리케이션 종료 시 정리 작업"""
