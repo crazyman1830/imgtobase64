@@ -11,6 +11,6 @@ from .config_factory import ConfigFactory
 
 __all__ = [
     # Core interfaces
-    'AppConfig',
-    'ConfigFactory'
+    "AppConfig",
+    "ConfigFactory",
 ]

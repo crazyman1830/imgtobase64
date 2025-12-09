@@ -6,17 +6,17 @@ consolidates all configuration-related functionality and eliminates
 duplication across the application.
 """
 
-import os
 import json
-from typing import Dict, Any, Optional, List, Union
-from pathlib import Path
-from dataclasses import dataclass, field, asdict
+import os
+from dataclasses import asdict, dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
+from ...domain.exceptions import FileSystemError, ValidationError
 from ..utils.path_utils import PathUtils
-from ..utils.validation_utils import ValidationUtils
 from ..utils.type_utils import TypeUtils
-from ...domain.exceptions import ValidationError, FileSystemError
+from ..utils.validation_utils import ValidationUtils
 
 
 class ConfigSource(Enum):
@@ -330,4 +330,305 @@ class UnifiedConfigManager:
                     )
                     
         except Exception as e:
-            print(f"Warning: Could not load configuration file {file_path}: {e}")\n    \n    def _load_from_environment(self) -> None:\n        \"\"\"Load configuration from environment variables.\"\"\"\n        for env_var, config_key in self.ENV_MAPPINGS.items():\n            env_value = os.getenv(env_var)\n            if env_value is not None:\n                try:\n                    # Convert environment variable value to appropriate type\n                    schema = self.DEFAULT_SCHEMA.get(config_key, {})\n                    target_type = schema.get('type', str)\n                    \n                    converted_value = TypeUtils.coerce_to_type(env_value, target_type.__name__)\n                    \n                    self._config_values[config_key] = ConfigValue(\n                        value=converted_value,\n                        source=ConfigSource.ENVIRONMENT,\n                        key_path=config_key,\n                        description=schema.get('description')\n                    )\n                    \n                except Exception as e:\n                    print(f\"Warning: Invalid environment variable {env_var}={env_value}: {e}\")\n    \n    def _validate_configuration(self) -> None:\n        \"\"\"Validate all configuration values against their schemas.\"\"\"\n        for key_path, config_value in self._config_values.items():\n            schema = self.DEFAULT_SCHEMA.get(key_path, {})\n            \n            try:\n                # Type validation\n                expected_type = schema.get('type')\n                if expected_type and not isinstance(config_value.value, expected_type):\n                    # Try to convert\n                    config_value.value = TypeUtils.safe_cast(\n                        config_value.value, expected_type, schema['default']\n                    )\n                \n                # Range validation for numeric values\n                if isinstance(config_value.value, (int, float)):\n                    min_value = schema.get('min_value')\n                    max_value = schema.get('max_value')\n                    \n                    if min_value is not None:\n                        ValidationUtils.validate_range(\n                            config_value.value, min_value=min_value, field_name=key_path\n                        )\n                    \n                    if max_value is not None:\n                        ValidationUtils.validate_range(\n                            config_value.value, max_value=max_value, field_name=key_path\n                        )\n                \n                # Choice validation\n                choices = schema.get('choices')\n                if choices:\n                    ValidationUtils.validate_choice(\n                        config_value.value, choices, field_name=key_path\n                    )\n                \n            except ValidationError as e:\n                print(f\"Warning: Invalid configuration value for {key_path}: {e}\")\n                # Reset to default value\n                config_value.value = schema['default']\n                config_value.source = ConfigSource.DEFAULT\n    \n    def _ensure_directories(self) -> None:\n        \"\"\"Ensure all configured directories exist.\"\"\"\n        directory_keys = [\n            'cache.directory',\n            'logging.directory', \n            'directories.temp',\n            'directories.data'\n        ]\n        \n        for key in directory_keys:\n            if key in self._config_values:\n                directory_path = self._config_values[key].value\n                try:\n                    PathUtils.ensure_directory_exists(directory_path)\n                except FileSystemError as e:\n                    print(f\"Warning: Could not create directory for {key}: {e}\")\n    \n    def get(self, key_path: str, default: Any = None) -> Any:\n        \"\"\"Get a configuration value by key path.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        config_value = self._config_values.get(key_path)\n        if config_value is not None:\n            return config_value.value\n        \n        return default\n    \n    def set(self, key_path: str, value: Any, source: ConfigSource = ConfigSource.OVERRIDE) -> None:\n        \"\"\"Set a configuration value.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        # Validate against schema if available\n        schema = self.DEFAULT_SCHEMA.get(key_path, {})\n        if schema:\n            expected_type = schema.get('type')\n            if expected_type:\n                value = TypeUtils.safe_cast(value, expected_type, value)\n        \n        old_value = self._config_values.get(key_path)\n        \n        self._config_values[key_path] = ConfigValue(\n            value=value,\n            source=source,\n            key_path=key_path,\n            description=schema.get('description')\n        )\n        \n        # Notify change listeners\n        self._notify_change_listeners(key_path, old_value.value if old_value else None, value)\n    \n    def get_all(self) -> Dict[str, Any]:\n        \"\"\"Get all configuration values as a flat dictionary.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        return {key: config_value.value for key, config_value in self._config_values.items()}\n    \n    def get_nested(self) -> Dict[str, Any]:\n        \"\"\"Get all configuration values as a nested dictionary.\"\"\"\n        flat_config = self.get_all()\n        return TypeUtils.unflatten_dict(flat_config)\n    \n    def get_config_info(self, key_path: str) -> Optional[ConfigValue]:\n        \"\"\"Get detailed information about a configuration value.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        return self._config_values.get(key_path)\n    \n    def list_all_config_info(self) -> Dict[str, ConfigValue]:\n        \"\"\"Get detailed information about all configuration values.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        return self._config_values.copy()\n    \n    def save_to_file(self, file_path: str) -> None:\n        \"\"\"Save current configuration to a file.\"\"\"\n        if not self._loaded:\n            self.load_configuration()\n        \n        config_dict = self.get_nested()\n        \n        try:\n            config_path = PathUtils.normalize_path(file_path)\n            PathUtils.ensure_directory_exists(config_path.parent)\n            \n            with open(config_path, 'w', encoding='utf-8') as f:\n                json.dump(config_dict, f, indent=2, ensure_ascii=False)\n                \n        except Exception as e:\n            raise FileSystemError(f\"Error saving configuration to {file_path}: {e}\")\n    \n    def reload(self) -> None:\n        \"\"\"Reload configuration from all sources.\"\"\"\n        self._config_values.clear()\n        self._loaded = False\n        self.load_configuration()\n    \n    def add_change_listener(self, listener: callable) -> None:\n        \"\"\"Add a listener for configuration changes.\"\"\"\n        self._change_listeners.append(listener)\n    \n    def remove_change_listener(self, listener: callable) -> None:\n        \"\"\"Remove a configuration change listener.\"\"\"\n        if listener in self._change_listeners:\n            self._change_listeners.remove(listener)\n    \n    def _notify_change_listeners(self, key_path: str, old_value: Any, new_value: Any) -> None:\n        \"\"\"Notify all change listeners of a configuration change.\"\"\"\n        for listener in self._change_listeners:\n            try:\n                listener(key_path, old_value, new_value)\n            except Exception as e:\n                print(f\"Warning: Configuration change listener failed: {e}\")\n    \n    def create_sample_config_file(self, file_path: str = 'config.json') -> None:\n        \"\"\"Create a sample configuration file with all available options.\"\"\"\n        sample_config = {}\n        \n        for key_path, schema in self.DEFAULT_SCHEMA.items():\n            # Create nested structure\n            TypeUtils.set_nested_value(\n                sample_config, \n                key_path, \n                {\n                    'value': schema['default'],\n                    'description': schema.get('description', ''),\n                    'type': schema['type'].__name__,\n                    'choices': schema.get('choices'),\n                    'min_value': schema.get('min_value'),\n                    'max_value': schema.get('max_value')\n                }\n            )\n        \n        try:\n            config_path = PathUtils.normalize_path(file_path)\n            PathUtils.ensure_directory_exists(config_path.parent)\n            \n            with open(config_path, 'w', encoding='utf-8') as f:\n                json.dump(sample_config, f, indent=2, ensure_ascii=False)\n            \n            print(f\"Sample configuration file created: {file_path}\")\n            \n        except Exception as e:\n            print(f\"Error creating sample configuration file: {e}\")\n    \n    def validate_config_file(self, file_path: str) -> List[str]:\n        \"\"\"Validate a configuration file and return any errors.\"\"\"\n        errors = []\n        \n        try:\n            config_path = PathUtils.normalize_path(file_path)\n            \n            if not config_path.exists():\n                errors.append(f\"Configuration file not found: {file_path}\")\n                return errors\n            \n            with open(config_path, 'r', encoding='utf-8') as f:\n                file_config = json.load(f)\n            \n            if not isinstance(file_config, dict):\n                errors.append(\"Configuration file must contain a JSON object\")\n                return errors\n            \n            # Validate each configuration value\n            flattened = TypeUtils.flatten_dict(file_config)\n            \n            for key, value in flattened.items():\n                if key not in self.DEFAULT_SCHEMA:\n                    errors.append(f\"Unknown configuration key: {key}\")\n                    continue\n                \n                schema = self.DEFAULT_SCHEMA[key]\n                \n                # Type validation\n                expected_type = schema.get('type')\n                if expected_type and not isinstance(value, expected_type):\n                    errors.append(\n                        f\"Invalid type for {key}: expected {expected_type.__name__}, \"\n                        f\"got {type(value).__name__}\"\n                    )\n                \n                # Range validation\n                if isinstance(value, (int, float)):\n                    min_value = schema.get('min_value')\n                    max_value = schema.get('max_value')\n                    \n                    if min_value is not None and value < min_value:\n                        errors.append(f\"Value for {key} is below minimum: {value} < {min_value}\")\n                    \n                    if max_value is not None and value > max_value:\n                        errors.append(f\"Value for {key} is above maximum: {value} > {max_value}\")\n                \n                # Choice validation\n                choices = schema.get('choices')\n                if choices and value not in choices:\n                    errors.append(f\"Invalid choice for {key}: {value} not in {choices}\")\n            \n        except json.JSONDecodeError as e:\n            errors.append(f\"Invalid JSON in configuration file: {e}\")\n        except Exception as e:\n            errors.append(f\"Error validating configuration file: {e}\")\n        \n        return errors\n\n\n# Global configuration manager instance\n_global_config_manager: Optional[UnifiedConfigManager] = None\n\n\ndef get_config_manager(config_file: Optional[str] = None) -> UnifiedConfigManager:\n    \"\"\"Get the global configuration manager instance.\"\"\"\n    global _global_config_manager\n    \n    if _global_config_manager is None:\n        _global_config_manager = UnifiedConfigManager(config_file)\n    \n    return _global_config_manager\n\n\ndef get_config(key_path: str, default: Any = None) -> Any:\n    \"\"\"Get a configuration value using the global manager.\"\"\"\n    return get_config_manager().get(key_path, default)\n\n\ndef set_config(key_path: str, value: Any) -> None:\n    \"\"\"Set a configuration value using the global manager.\"\"\"\n    get_config_manager().set(key_path, value)\n\n\ndef reload_config() -> None:\n    \"\"\"Reload configuration using the global manager.\"\"\"\n    get_config_manager().reload()
+            print(f"Warning: Could not load configuration file {file_path}: {e}")
+    
+    def _load_from_environment(self) -> None:
+        """Load configuration from environment variables."""
+        for env_var, config_key in self.ENV_MAPPINGS.items():
+            env_value = os.getenv(env_var)
+            if env_value is not None:
+                try:
+                    # Convert environment variable value to appropriate type
+                    schema = self.DEFAULT_SCHEMA.get(config_key, {})
+                    target_type = schema.get('type', str)
+                    
+                    converted_value = TypeUtils.coerce_to_type(env_value, target_type.__name__)
+                    
+                    self._config_values[config_key] = ConfigValue(
+                        value=converted_value,
+                        source=ConfigSource.ENVIRONMENT,
+                        key_path=config_key,
+                        description=schema.get('description')
+                    )
+                    
+                except Exception as e:
+                    print(f"Warning: Invalid environment variable {env_var}={env_value}: {e}")
+    
+    def _validate_configuration(self) -> None:
+        """Validate all configuration values against their schemas."""
+        for key_path, config_value in self._config_values.items():
+            schema = self.DEFAULT_SCHEMA.get(key_path, {})
+            
+            try:
+                # Type validation
+                expected_type = schema.get('type')
+                if expected_type and not isinstance(config_value.value, expected_type):
+                    # Try to convert
+                    config_value.value = TypeUtils.safe_cast(
+                        config_value.value, expected_type, schema['default']
+                    )
+                
+                # Range validation for numeric values
+                if isinstance(config_value.value, (int, float)):
+                    min_value = schema.get('min_value')
+                    max_value = schema.get('max_value')
+                    
+                    if min_value is not None:
+                        ValidationUtils.validate_range(
+                            config_value.value, min_value=min_value, field_name=key_path
+                        )
+                    
+                    if max_value is not None:
+                        ValidationUtils.validate_range(
+                            config_value.value, max_value=max_value, field_name=key_path
+                        )
+                
+                # Choice validation
+                choices = schema.get('choices')
+                if choices:
+                    ValidationUtils.validate_choice(
+                        config_value.value, choices, field_name=key_path
+                    )
+                
+            except ValidationError as e:
+                print(f"Warning: Invalid configuration value for {key_path}: {e}")
+                # Reset to default value
+                config_value.value = schema['default']
+                config_value.source = ConfigSource.DEFAULT
+    
+    def _ensure_directories(self) -> None:
+        """Ensure all configured directories exist."""
+        directory_keys = [
+            'cache.directory',
+            'logging.directory', 
+            'directories.temp',
+            'directories.data'
+        ]
+        
+        for key in directory_keys:
+            if key in self._config_values:
+                directory_path = self._config_values[key].value
+                try:
+                    PathUtils.ensure_directory_exists(directory_path)
+                except FileSystemError as e:
+                    print(f"Warning: Could not create directory for {key}: {e}")
+    
+    def get(self, key_path: str, default: Any = None) -> Any:
+        """Get a configuration value by key path."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        config_value = self._config_values.get(key_path)
+        if config_value is not None:
+            return config_value.value
+        
+        return default
+    
+    def set(self, key_path: str, value: Any, source: ConfigSource = ConfigSource.OVERRIDE) -> None:
+        """Set a configuration value."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        # Validate against schema if available
+        schema = self.DEFAULT_SCHEMA.get(key_path, {})
+        if schema:
+            expected_type = schema.get('type')
+            if expected_type:
+                value = TypeUtils.safe_cast(value, expected_type, value)
+        
+        old_value = self._config_values.get(key_path)
+        
+        self._config_values[key_path] = ConfigValue(
+            value=value,
+            source=source,
+            key_path=key_path,
+            description=schema.get('description')
+        )
+        
+        # Notify change listeners
+        self._notify_change_listeners(key_path, old_value.value if old_value else None, value)
+    
+    def get_all(self) -> Dict[str, Any]:
+        """Get all configuration values as a flat dictionary."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        return {key: config_value.value for key, config_value in self._config_values.items()}
+    
+    def get_nested(self) -> Dict[str, Any]:
+        """Get all configuration values as a nested dictionary."""
+        flat_config = self.get_all()
+        return TypeUtils.unflatten_dict(flat_config)
+    
+    def get_config_info(self, key_path: str) -> Optional[ConfigValue]:
+        """Get detailed information about a configuration value."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        return self._config_values.get(key_path)
+    
+    def list_all_config_info(self) -> Dict[str, ConfigValue]:
+        """Get detailed information about all configuration values."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        return self._config_values.copy()
+    
+    def save_to_file(self, file_path: str) -> None:
+        """Save current configuration to a file."""
+        if not self._loaded:
+            self.load_configuration()
+        
+        config_dict = self.get_nested()
+        
+        try:
+            config_path = PathUtils.normalize_path(file_path)
+            PathUtils.ensure_directory_exists(config_path.parent)
+            
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_dict, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            raise FileSystemError(f"Error saving configuration to {file_path}: {e}")
+    
+    def reload(self) -> None:
+        """Reload configuration from all sources."""
+        self._config_values.clear()
+        self._loaded = False
+        self.load_configuration()
+    
+    def add_change_listener(self, listener: callable) -> None:
+        """Add a listener for configuration changes."""
+        self._change_listeners.append(listener)
+    
+    def remove_change_listener(self, listener: callable) -> None:
+        """Remove a configuration change listener."""
+        if listener in self._change_listeners:
+            self._change_listeners.remove(listener)
+    
+    def _notify_change_listeners(self, key_path: str, old_value: Any, new_value: Any) -> None:
+        """Notify all change listeners of a configuration change."""
+        for listener in self._change_listeners:
+            try:
+                listener(key_path, old_value, new_value)
+            except Exception as e:
+                print(f"Warning: Configuration change listener failed: {e}")
+    
+    def create_sample_config_file(self, file_path: str = 'config.json') -> None:
+        """Create a sample configuration file with all available options."""
+        sample_config = {}
+        
+        for key_path, schema in self.DEFAULT_SCHEMA.items():
+            # Create nested structure
+            TypeUtils.set_nested_value(
+                sample_config, 
+                key_path, 
+                {
+                    'value': schema['default'],
+                    'description': schema.get('description', ''),
+                    'type': schema['type'].__name__,
+                    'choices': schema.get('choices'),
+                    'min_value': schema.get('min_value'),
+                    'max_value': schema.get('max_value')
+                }
+            )
+        
+        try:
+            config_path = PathUtils.normalize_path(file_path)
+            PathUtils.ensure_directory_exists(config_path.parent)
+            
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(sample_config, f, indent=2, ensure_ascii=False)
+            
+            print(f"Sample configuration file created: {file_path}")
+            
+        except Exception as e:
+            print(f"Error creating sample configuration file: {e}")
+    
+    def validate_config_file(self, file_path: str) -> List[str]:
+        """Validate a configuration file and return any errors."""
+        errors = []
+        
+        try:
+            config_path = PathUtils.normalize_path(file_path)
+            
+            if not config_path.exists():
+                errors.append(f"Configuration file not found: {file_path}")
+                return errors
+            
+            with open(config_path, 'r', encoding='utf-8') as f:
+                file_config = json.load(f)
+            
+            if not isinstance(file_config, dict):
+                errors.append("Configuration file must contain a JSON object")
+                return errors
+            
+            # Validate each configuration value
+            flattened = TypeUtils.flatten_dict(file_config)
+            
+            for key, value in flattened.items():
+                if key not in self.DEFAULT_SCHEMA:
+                    errors.append(f"Unknown configuration key: {key}")
+                    continue
+                
+                schema = self.DEFAULT_SCHEMA[key]
+                
+                # Type validation
+                expected_type = schema.get('type')
+                if expected_type and not isinstance(value, expected_type):
+                    errors.append(
+                        f"Invalid type for {key}: expected {expected_type.__name__}, "
+                        f"got {type(value).__name__}"
+                    )
+                
+                # Range validation
+                if isinstance(value, (int, float)):
+                    min_value = schema.get('min_value')
+                    max_value = schema.get('max_value')
+                    
+                    if min_value is not None and value < min_value:
+                        errors.append(f"Value for {key} is below minimum: {value} < {min_value}")
+                    
+                    if max_value is not None and value > max_value:
+                        errors.append(f"Value for {key} is above maximum: {value} > {max_value}")
+                
+                # Choice validation
+                choices = schema.get('choices')
+                if choices and value not in choices:
+                    errors.append(f"Invalid choice for {key}: {value} not in {choices}")
+            
+        except json.JSONDecodeError as e:
+            errors.append(f"Invalid JSON in configuration file: {e}")
+        except Exception as e:
+            errors.append(f"Error validating configuration file: {e}")
+        
+        return errors
+
+
+# Global configuration manager instance
+_global_config_manager: Optional[UnifiedConfigManager] = None
+
+
+def get_config_manager(config_file: Optional[str] = None) -> UnifiedConfigManager:
+    """Get the global configuration manager instance."""
+    global _global_config_manager
+    
+    if _global_config_manager is None:
+        _global_config_manager = UnifiedConfigManager(config_file)
+    
+    return _global_config_manager
+
+
+def get_config(key_path: str, default: Any = None) -> Any:
+    """Get a configuration value using the global manager."""
+    return get_config_manager().get(key_path, default)
+
+
+def set_config(key_path: str, value: Any) -> None:
+    """Set a configuration value using the global manager."""
+    get_config_manager().set(key_path, value)
+
+
+def reload_config() -> None:
+    """Reload configuration using the global manager."""
+    get_config_manager().reload()

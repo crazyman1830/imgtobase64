@@ -192,6 +192,13 @@ data/temp/
 *.temp
 *.temporary
 
+# 임시 스크립트 (개발 중 생성된 수정 스크립트)
+fix_*.py
+
+# 코드 포맷터 캐시
+.black/
+.ruff_cache/
+
 # 테스트 출력 파일
 test_output/
 test_results/

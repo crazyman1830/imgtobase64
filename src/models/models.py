@@ -1,8 +1,10 @@
 """
 Data models for the image base64 converter.
 """
+
 from dataclasses import dataclass
 from typing import Optional
+
 from .processing_options import ProcessingOptions, SecurityScanResult
 
 
@@ -10,7 +12,7 @@ from .processing_options import ProcessingOptions, SecurityScanResult
 class ConversionResult:
     """
     Result of an image conversion operation.
-    
+
     Attributes:
         file_path: Path to the original image file
         success: Whether the conversion was successful
@@ -28,6 +30,7 @@ class ConversionResult:
         security_scan_result: Security scan result if performed
         thumbnail_data: Base64 encoded thumbnail for preview
     """
+
     file_path: str
     success: bool
     base64_data: str = ""
@@ -44,35 +47,43 @@ class ConversionResult:
     security_scan_result: Optional[SecurityScanResult] = None
     thumbnail_data: str = ""
 
+
 # Custom Exception Classes
+
 
 class ImageConverterError(Exception):
     """Base exception class for image converter errors."""
+
     pass
 
 
 class UnsupportedFormatError(ImageConverterError):
     """Exception raised when an unsupported image format is encountered."""
+
     pass
 
 
 class FileNotFoundError(ImageConverterError):
     """Exception raised when a file cannot be found."""
+
     pass
 
 
 class PermissionError(ImageConverterError):
     """Exception raised when there are insufficient permissions to read a file."""
+
     pass
 
 
 class CorruptedFileError(ImageConverterError):
     """Exception raised when a file is corrupted or invalid."""
+
     pass
 
 
 class ConversionError(ImageConverterError):
     """Exception raised during conversion operations."""
+
     def __init__(self, message: str):
         self.message = message
         super().__init__(message)
@@ -80,19 +91,23 @@ class ConversionError(ImageConverterError):
 
 class ProcessingQueueFullError(ImageConverterError):
     """Exception raised when the processing queue is full."""
+
     pass
 
 
 class SecurityThreatDetectedError(ImageConverterError):
     """Exception raised when a security threat is detected."""
+
     pass
 
 
 class CacheError(ImageConverterError):
     """Exception raised for cache-related errors."""
+
     pass
 
 
 class RateLimitExceededError(ImageConverterError):
     """Exception raised when rate limit is exceeded."""
+
     pass
