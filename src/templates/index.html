@@ -17,9 +17,11 @@
             transition: all 0.3s ease;
             background-color: #f8f9fa;
         }
-        .drop-zone:hover, .drop-zone.dragover {
+        .drop-zone:hover, .drop-zone.dragover, .drop-zone:focus {
             border-color: #007bff;
             background-color: #e3f2fd;
+            outline: none;
+            box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
         }
         .preview-image {
             max-width: 100%;
@@ -89,7 +91,7 @@
                     <div class="tab-pane fade show active" id="to-base64" role="tabpanel">
                         <div class="card">
                             <div class="card-body">
-                                <div class="drop-zone" id="dropZone">
+                                <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="이미지 파일 업로드">
                                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                     <h5>이미지 파일을 드래그하거나 클릭하여 선택하세요</h5>
                                     <p class="text-muted">지원 형식: JPG, PNG, GIF, BMP, WEBP</p>
@@ -102,7 +104,7 @@
                                         <div class="card-header">
                                             <h6 class="mb-0">
                                                 <i class="fas fa-cogs"></i> 이미지 처리 옵션
-                                                <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#optionsCollapse">
+                                                <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#optionsCollapse" aria-label="이미지 처리 옵션 토글">
                                                     <i class="fas fa-chevron-down"></i>
                                                 </button>
                                             </h6>
@@ -281,7 +283,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <!-- 다중 파일 드롭존 -->
-                                <div class="drop-zone" id="multiDropZone">
+                                <div class="drop-zone" id="multiDropZone" tabindex="0" role="button" aria-label="다중 파일 업로드">
                                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                     <h5>여러 이미지 파일을 드래그하거나 클릭하여 선택하세요</h5>
                                     <p class="text-muted">지원 형식: JPG, PNG, GIF, BMP, WEBP</p>
@@ -309,7 +311,7 @@
                                         <div class="card-header">
                                             <h6 class="mb-0">
                                                 <i class="fas fa-cogs"></i> 공통 처리 옵션
-                                                <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#multiOptionsCollapse">
+                                                <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#multiOptionsCollapse" aria-label="공통 처리 옵션 토글">
                                                     <i class="fas fa-chevron-down"></i>
                                                 </button>
                                             </h6>

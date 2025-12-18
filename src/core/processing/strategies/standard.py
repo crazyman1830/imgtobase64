@@ -29,15 +29,15 @@ class StandardStrategy(ProcessingStrategy):
     async def execute(
         self,
         queue: ProcessingQueue,
-        processor_func: Callable[[str, ProcessingOptions], ConversionResult]
+        processor_func: Callable[[str, ProcessingOptions], ConversionResult],
     ) -> AsyncGenerator[ConversionResult, None]:
-        
+
         queue_id = queue.queue_id
-        
+
         # Initialize queue status
         queue.status = "processing"
         queue.started_time = time.time()
-        
+
         if queue_id not in self._active_tasks:
             self._active_tasks[queue_id] = set()
 
@@ -55,13 +55,15 @@ class StandardStrategy(ProcessingStrategy):
             for item in queue.items:
                 if queue.cancelled:
                     break
-                
+
                 # Skip already completed items
                 if item.completed_time:
                     continue
 
                 task = asyncio.create_task(
-                    self._process_single_item(item, processor_func, local_executor, semaphore)
+                    self._process_single_item(
+                        item, processor_func, local_executor, semaphore
+                    )
                 )
                 pending_tasks.append(task)
                 self._active_tasks[queue_id].add(task)
@@ -71,10 +73,10 @@ class StandardStrategy(ProcessingStrategy):
                 # Clean up task reference
                 # Note: as_completed yields futures/coroutines, finding the original task object might be tricky directly
                 # but we just need to yield results. We clean up _active_tasks at the end or on cancellation.
-                
+
                 if queue.cancelled:
                     break
-                
+
                 try:
                     result = await completed_task
                     if result:
@@ -87,15 +89,15 @@ class StandardStrategy(ProcessingStrategy):
 
             # Wait for remaining if any (in case of break)
             # Actually if we break, we should cancel pending
-            
+
         except Exception as e:
             queue.status = "error"
             raise ConversionError(f"Strategy execution failed: {str(e)}")
-            
+
         finally:
             if internal_executor and isinstance(local_executor, ThreadPoolExecutor):
                 local_executor.shutdown(wait=False)
-            
+
             # Cleanup active tasks tracking
             if queue_id in self._active_tasks:
                 for t in self._active_tasks[queue_id]:
@@ -112,34 +114,29 @@ class StandardStrategy(ProcessingStrategy):
         item: FileQueueItem,
         processor_func: Callable[[str, ProcessingOptions], ConversionResult],
         executor: Executor,
-        semaphore: asyncio.Semaphore
+        semaphore: asyncio.Semaphore,
     ) -> Optional[ConversionResult]:
-        
+
         async with semaphore:
             item.started_time = time.time()
             try:
                 loop = asyncio.get_running_loop()
                 result = await loop.run_in_executor(
-                    executor,
-                    processor_func,
-                    item.file_path,
-                    item.options
+                    executor, processor_func, item.file_path, item.options
                 )
-                
+
                 item.completed_time = time.time()
                 item.result = result
                 if not result.success:
                     item.error = result.error_message
-                
+
                 return result
 
             except Exception as e:
                 item.completed_time = time.time()
                 item.error = str(e)
                 error_result = ConversionResult(
-                    file_path=item.file_path,
-                    success=False,
-                    error_message=str(e)
+                    file_path=item.file_path, success=False, error_message=str(e)
                 )
                 item.result = error_result
                 return error_result

@@ -438,6 +438,90 @@ class ImageProcessor:
                 f"Failed to compress image with memory optimization: {str(e)}"
             )
 
+    def compress_to_buffer(
+        self,
+        image: Image.Image,
+        quality: int = 85,
+        target_format: Optional[str] = None,
+        optimize: bool = True,
+        compute_original_size: bool = True,
+    ) -> Tuple[io.BytesIO, dict]:
+        """
+        Compress an image and return the buffer directly.
+
+        Args:
+            image: PIL Image object to compress
+            quality: Compression quality (1-100)
+            target_format: Target format for compression
+            optimize: Whether to enable format-specific optimization
+            compute_original_size: Whether to compute original size (expensive)
+
+        Returns:
+            Tuple of (buffer, compression_info)
+        """
+        if image is None:
+            raise ConversionError("Cannot compress None image")
+
+        if not (1 <= quality <= 100):
+            raise ConversionError("Quality must be between 1 and 100")
+
+        # Determine target format
+        if target_format is None:
+            target_format = image.format or "PNG"
+
+        target_format = target_format.upper()
+        if target_format not in self.supported_formats:
+            supported_list = ", ".join(sorted(self.supported_formats))
+            raise ConversionError(
+                f"Unsupported format '{target_format}'. "
+                f"Supported formats: {supported_list}"
+            )
+
+        try:
+            original_size = 0
+            original_format = image.format or "PNG"
+
+            # Get original size by saving to memory (expensive)
+            if compute_original_size:
+                original_buffer = io.BytesIO()
+                image.save(original_buffer, format=original_format)
+                original_size = original_buffer.tell()
+
+            # Prepare compression parameters
+            save_params = self._get_compression_params(target_format, quality, optimize)
+
+            # Handle format conversion if needed
+            converted_image = self._prepare_image_for_format(image, target_format)
+
+            # Compress the image
+            compressed_buffer = io.BytesIO()
+            converted_image.save(compressed_buffer, format=target_format, **save_params)
+            compressed_size = compressed_buffer.tell()
+            compressed_buffer.seek(0)
+
+            # Calculate compression ratio
+            compression_ratio = (
+                (original_size - compressed_size) / original_size * 100
+                if original_size > 0
+                else 0
+            )
+
+            # Create compression info
+            compression_info = {
+                "original_size": original_size,
+                "compressed_size": compressed_size,
+                "compression_ratio": compression_ratio,
+                "original_format": original_format,
+                "target_format": target_format,
+                "quality": quality,
+                "optimized": optimize,
+            }
+
+            return compressed_buffer, compression_info
+
+        except Exception as e:
+            raise ConversionError(f"Failed to compress image: {str(e)}")
+
     def compress_image(
         self,
         image: Image.Image,
@@ -461,71 +545,18 @@ class ImageProcessor:
         Raises:
             ConversionError: If compression fails or invalid parameters
         """
-        if image is None:
-            raise ConversionError("Cannot compress None image")
-
-        if not (1 <= quality <= 100):
-            raise ConversionError("Quality must be between 1 and 100")
-
-        # Determine target format
-        if target_format is None:
-            target_format = image.format or "PNG"
-
-        target_format = target_format.upper()
-        if target_format not in self.supported_formats:
-            supported_list = ", ".join(sorted(self.supported_formats))
-            raise ConversionError(
-                f"Unsupported format '{target_format}'. "
-                f"Supported formats: {supported_list}"
-            )
+        compressed_buffer, compression_info = self.compress_to_buffer(
+            image, quality, target_format, optimize
+        )
 
         try:
-            # Get original size by saving to memory
-            original_buffer = io.BytesIO()
-            original_format = image.format or "PNG"
-            image.save(original_buffer, format=original_format)
-            original_size = original_buffer.tell()
-
-            # Prepare compression parameters
-            save_params = self._get_compression_params(target_format, quality, optimize)
-
-            # Handle format conversion if needed
-            compressed_image = self._prepare_image_for_format(image, target_format)
-
-            # Compress the image
-            compressed_buffer = io.BytesIO()
-            compressed_image.save(
-                compressed_buffer, format=target_format, **save_params
-            )
-            compressed_size = compressed_buffer.tell()
-
-            # Calculate compression ratio (can be negative if compressed is larger)
-            compression_ratio = (
-                (original_size - compressed_size) / original_size * 100
-                if original_size > 0
-                else 0
-            )
-
-            # Create compression info
-            compression_info = {
-                "original_size": original_size,
-                "compressed_size": compressed_size,
-                "compression_ratio": compression_ratio,
-                "original_format": original_format,
-                "target_format": target_format,
-                "quality": quality,
-                "optimized": optimize,
-            }
-
             # Load compressed image from buffer for return
-            compressed_buffer.seek(0)
             result_image = Image.open(compressed_buffer)
             result_image.load()  # Ensure image data is loaded
 
             return result_image, compression_info
-
         except Exception as e:
-            raise ConversionError(f"Failed to compress image: {str(e)}")
+            raise ConversionError(f"Failed to load compressed image: {str(e)}")
 
     def _get_compression_params(
         self, format_name: str, quality: int, optimize: bool

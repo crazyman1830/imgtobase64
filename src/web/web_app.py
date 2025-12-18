@@ -527,8 +527,9 @@ def _process_image_with_options(
     try:
         # 이미지 로드
         with Image.open(file_path) as image:
-            # 이미지 복사 (원본 보존)
-            processed_image = image.copy()
+            # 이미지 복사 제거 (메모리 최적화)
+            # 원본 이미지 객체를 직접 사용 (PIL 연산은 어차피 새 이미지를 반환함)
+            processed_image = image
 
             # 회전 적용
             if options.rotation_angle != 0:
@@ -556,36 +557,23 @@ def _process_image_with_options(
                     maintain_aspect=options.maintain_aspect_ratio,
                 )
 
-            # 포맷 변환 적용
+            # 포맷 변환 및 압축을 한 번에 처리 (Optimized)
+            # 불필요한 PIL Image 저장/로드 반복 제거
             target_format = options.target_format or processed_image.format or "PNG"
-            if target_format != processed_image.format:
-                processed_image = image_processor.convert_format(
-                    processed_image, target_format
-                )
 
-            # 압축 적용
-            processed_image = image_processor.compress_image(
-                processed_image, quality=options.quality, format=target_format
+            # compress_to_buffer가 내부적으로 포맷 변환(convert_format)도 처리함
+            # compute_original_size=False로 불필요한 원본 저장/크기 계산 스킵 (중요 성능 최적화)
+            img_buffer, _ = image_processor.compress_to_buffer(
+                processed_image,
+                quality=options.quality,
+                target_format=target_format,
+                optimize=True,
+                compute_original_size=False,
             )
 
-            # Base64로 변환
-            img_buffer = BytesIO()
-            save_kwargs = {}
-
-            if target_format == "JPEG":
-                save_kwargs["quality"] = options.quality
-                save_kwargs["optimize"] = True
-            elif target_format == "PNG":
-                save_kwargs["optimize"] = True
-            elif target_format == "WEBP":
-                save_kwargs["quality"] = options.quality
-                save_kwargs["method"] = 6
-
-            processed_image.save(img_buffer, format=target_format, **save_kwargs)
-            img_buffer.seek(0)
-
-            # Base64 인코딩
-            base64_data = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+            # Base64 인코딩 (메모리 뷰 사용 및 ascii 디코딩으로 최적화)
+            # getbuffer()는 복사를 피하고, ascii 디코딩은 utf-8보다 빠름
+            base64_data = base64.b64encode(img_buffer.getbuffer()).decode("ascii")
 
             # 결과 생성
             result = ConversionResult(
@@ -594,7 +582,7 @@ def _process_image_with_options(
                 base64_data=base64_data,
                 format=target_format,
                 size=processed_image.size,
-                file_size=len(img_buffer.getvalue()),
+                file_size=img_buffer.getbuffer().nbytes,
             )
 
             return result

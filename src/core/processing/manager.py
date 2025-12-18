@@ -19,6 +19,7 @@ class FileQueueItem:
     """
     Represents a single file in the processing queue.
     """
+
     file_path: str
     options: ProcessingOptions
     priority: int = 0
@@ -38,6 +39,7 @@ class ProcessingQueue:
     """
     Represents a processing queue with metadata.
     """
+
     queue_id: str
     items: List[FileQueueItem]
     status: str = "pending"  # pending, processing, completed, error, cancelled
@@ -87,14 +89,14 @@ class QueueManager:
         for file_path in files:
             if not file_path or not isinstance(file_path, str):
                 raise ValueError(f"Invalid file path: {file_path}")
-            
+
             # Check if file exists
             path_obj = Path(file_path)
             if not path_obj.exists():
                 raise ValueError(f"File not found: {file_path}")
 
         queue_id = str(uuid.uuid4())
-        
+
         if options is None:
             # Avoid circular dependency if ProcessingOptions needs to be instantiated inside
             # Ideally passed from outside
@@ -129,7 +131,9 @@ class QueueManager:
                 return None
 
             pending = sum(1 for i in queue.items if i.started_time is None)
-            processing = sum(1 for i in queue.items if i.started_time and not i.completed_time)
+            processing = sum(
+                1 for i in queue.items if i.started_time and not i.completed_time
+            )
             completed = sum(1 for i in queue.items if i.completed_time)
             errors = sum(1 for i in queue.items if i.error)
 
@@ -176,10 +180,10 @@ class QueueManager:
                     t = queue.completed_time or queue.created_time
                     if current_time - t > max_age_seconds:
                         to_remove.append(qid)
-            
+
             for qid in to_remove:
                 del self._queues[qid]
-        
+
         return len(to_remove)
 
     def set_queue_status(self, queue_id: str, status: str):

@@ -28,33 +28,33 @@ class MemoryOptimizedStrategy(StandardStrategy):
         item: FileQueueItem,
         processor_func: Callable[[str, ProcessingOptions], ConversionResult],
         executor: Executor,
-        semaphore: asyncio.Semaphore
+        semaphore: asyncio.Semaphore,
     ) -> Optional[ConversionResult]:
-        
+
         async with semaphore:
             item.started_time = time.time()
             try:
                 # Use optimized memory context
-                # Note: We need a way to share the context or create one per item? 
+                # Note: We need a way to share the context or create one per item?
                 # The original code created one context for the whole queue processing in 'process_queue_optimized',
                 # but then inside the loop it just passed it.
-                # Here we are inside the loop. 
+                # Here we are inside the loop.
                 # Let's create a context per task or use a shared one?
                 # The original code used `with optimized_memory_context(max_memory_mb) as context:` wrapping the whole loop.
-                # But here we are distinct tasks. 
+                # But here we are distinct tasks.
                 # We can wrap the individual execution.
-                
+
                 loop = asyncio.get_running_loop()
-                
-                # We cannot easily share the context across threads in the way the original code did 
-                # because the original code was running the context manager in the main thread 
+
+                # We cannot easily share the context across threads in the way the original code did
+                # because the original code was running the context manager in the main thread
                 # and just passing the dict to threads.
                 # We can replicate that pattern if we change execute() structure, but let's try to wrap the execution.
-                
-                # However, garbage collection is global. 
+
+                # However, garbage collection is global.
                 # Let's assume we want to protect this specific operation.
-                
-                # Re-implementation note: 
+
+                # Re-implementation note:
                 # To strictly follow the original behavior, we would need to initialize the context in execute()
                 # and pass it down. But generic execute() doesn't support extra args.
                 # So we will create the context here or in execute().
@@ -63,39 +63,43 @@ class MemoryOptimizedStrategy(StandardStrategy):
                 pass
 
         # To properly implement this, we override execute to set up the context
-        return await super()._process_single_item(item, processor_func, executor, semaphore)
+        return await super()._process_single_item(
+            item, processor_func, executor, semaphore
+        )
 
     async def execute(
         self,
         queue: ProcessingQueue,
-        processor_func: Callable[[str, ProcessingOptions], ConversionResult]
+        processor_func: Callable[[str, ProcessingOptions], ConversionResult],
     ) -> AsyncGenerator[ConversionResult, None]:
-        
+
         # We need to wrap the parent execute logic with memory context
         # But parent execute is a generator.
-        
+
         try:
             with optimized_memory_context(self.max_memory_mb) as context:
                 # We need to inject this context into the processor
                 # We can bind it using a partial, or store it in self temporarily (not thread safe if shared strategy instance)
                 # Better: Define a wrapper function
-                
-                def wrapped_processor(file_path: str, options: ProcessingOptions) -> ConversionResult:
+
+                def wrapped_processor(
+                    file_path: str, options: ProcessingOptions
+                ) -> ConversionResult:
                     # Check memory
                     if "memory_monitor" in context:
-                         context["memory_monitor"].check_memory_thresholds()
-                    
+                        context["memory_monitor"].check_memory_thresholds()
+
                     result = processor_func(file_path, options)
-                    
+
                     if "gc_optimizer" in context:
                         context["gc_optimizer"].manual_collect()
-                        
+
                     return result
 
                 # Call parent execute with wrapped processor
                 async for result in super().execute(queue, wrapped_processor):
                     yield result
-                    
+
         except Exception as e:
             # If context fails
-             raise e
+            raise e

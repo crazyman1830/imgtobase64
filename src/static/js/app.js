@@ -54,6 +54,14 @@ function initializeDropZone() {
     // 클릭 이벤트
     dropZone.addEventListener('click', () => fileInput.click());
 
+    // 키보드 이벤트 (Enter 또는 Space)
+    dropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+
     // 드래그 앤 드롭 이벤트
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -629,6 +637,14 @@ function initializeMultiFileHandling() {
     
     // 클릭 이벤트
     multiDropZone.addEventListener('click', () => multiFileInput.click());
+
+    // 키보드 이벤트 (Enter 또는 Space)
+    multiDropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            multiFileInput.click();
+        }
+    });
     
     // 드래그 앤 드롭 이벤트
     multiDropZone.addEventListener('dragover', (e) => {

@@ -9,12 +9,12 @@ from ..models.models import ConversionError, ConversionResult, ProcessingQueueFu
 from ..models.processing_options import ProcessingOptions, ProgressInfo
 
 __all__ = [
-    'MultiFileHandler',
-    'FileQueueItem',
-    'ProcessingQueue',
-    'ConversionError',
-    'ConversionResult',
-    'ProcessingQueueFullError',
-    'ProcessingOptions', 
-    'ProgressInfo'
+    "MultiFileHandler",
+    "FileQueueItem",
+    "ProcessingQueue",
+    "ConversionError",
+    "ConversionResult",
+    "ProcessingQueueFullError",
+    "ProcessingOptions",
+    "ProgressInfo",
 ]
