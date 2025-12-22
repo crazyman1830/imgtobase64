@@ -38,12 +38,13 @@ let cacheStatus = {
 };
 
 // DOM 로드 완료 후 초기화
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeDropZone();
     initializeFileInput();
     initializeProcessingOptions();
     initializeMultiFileHandling();
     initializeHistoryAndCache();
+    initializeImageConversion();
 });
 
 // 드롭존 초기화
@@ -75,7 +76,7 @@ function initializeDropZone() {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFileSelection(files[0]);
@@ -112,10 +113,10 @@ function handleFileSelection(file) {
 
     // 미리보기 표시
     showImagePreview(file);
-    
+
     // 처리 옵션 표시
     showProcessingOptions();
-    
+
     // Base64 변환 (기본 옵션으로)
     convertToBase64(file);
 }
@@ -123,14 +124,14 @@ function handleFileSelection(file) {
 // 이미지 미리보기 표시
 function showImagePreview(file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const previewImg = document.getElementById('previewImg');
         const imagePreview = document.getElementById('imagePreview');
         const fileInfo = document.getElementById('fileInfo');
-        
+
         previewImg.src = e.target.result;
         imagePreview.style.display = 'block';
-        
+
         // 파일 정보 표시
         fileInfo.innerHTML = `
             <div class="row">
@@ -152,30 +153,30 @@ function showImagePreview(file) {
 function convertToBase64(file) {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     showLoading(true);
-    
+
     fetch('/api/convert/to-base64', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        showLoading(false);
-        
-        if (data.error) {
-            showToast(data.error, 'error');
-            return;
-        }
-        
-        currentBase64Data = data.base64;
-        displayBase64Result(data);
-        showToast('Base64 변환이 완료되었습니다!', 'success');
-    })
-    .catch(error => {
-        showLoading(false);
-        showToast('변환 중 오류가 발생했습니다: ' + error.message, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+
+            if (data.error) {
+                showToast(data.error, 'error');
+                return;
+            }
+
+            currentBase64Data = data.base64;
+            displayBase64Result(data);
+            showToast('Base64 변환이 완료되었습니다!', 'success');
+        })
+        .catch(error => {
+            showLoading(false);
+            showToast('변환 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
 }
 
 // Base64 변환 (고급 옵션)
@@ -183,46 +184,46 @@ function convertToBase64Advanced(file, options) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('options', JSON.stringify(options));
-    
+
     showLoading(true);
-    
+
     fetch('/api/convert/to-base64-advanced', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        showLoading(false);
-        
-        if (data.error) {
-            showToast(data.error, 'error');
-            return;
-        }
-        
-        currentBase64Data = data.base64;
-        displayBase64Result(data);
-        showToast('고급 옵션이 적용된 Base64 변환이 완료되었습니다!', 'success');
-    })
-    .catch(error => {
-        showLoading(false);
-        showToast('변환 중 오류가 발생했습니다: ' + error.message, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+
+            if (data.error) {
+                showToast(data.error, 'error');
+                return;
+            }
+
+            currentBase64Data = data.base64;
+            displayBase64Result(data);
+            showToast('고급 옵션이 적용된 Base64 변환이 완료되었습니다!', 'success');
+        })
+        .catch(error => {
+            showLoading(false);
+            showToast('변환 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
 }
 
 // Base64 결과 표시
 function displayBase64Result(data) {
     const base64Result = document.getElementById('base64Result');
     const base64Output = document.getElementById('base64Output');
-    
+
     base64Output.textContent = data.base64;
     base64Result.style.display = 'block';
-    
+
     // 이미지 비교 미리보기 표시
     showImageComparison(data);
-    
+
     // 파일 정보 업데이트
     const fileInfo = document.getElementById('fileInfo');
-    
+
     // 기본 변환 결과
     let resultInfo = `
         <div class="mt-2 pt-2 border-top">
@@ -237,12 +238,12 @@ function displayBase64Result(data) {
             </div>
         </div>
     `;
-    
+
     // 고급 처리 정보가 있는 경우 추가
     if (data.processing_options) {
         const options = data.processing_options;
         let optionsInfo = '<div class="mt-2 pt-2 border-top"><h6><i class="fas fa-cogs"></i> 적용된 처리 옵션</h6><div class="row">';
-        
+
         // 원본 vs 처리된 정보
         if (data.original_size && data.processed_size) {
             optionsInfo += `
@@ -252,7 +253,7 @@ function displayBase64Result(data) {
                 </div>
             `;
         }
-        
+
         // 처리 옵션 상세
         let appliedOptions = [];
         if (options.resize_width || options.resize_height) {
@@ -273,7 +274,7 @@ function displayBase64Result(data) {
         if (options.flip_vertical) {
             appliedOptions.push('수직 뒤집기');
         }
-        
+
         if (appliedOptions.length > 0) {
             optionsInfo += `
                 <div class="col-md-6">
@@ -282,13 +283,13 @@ function displayBase64Result(data) {
                 </div>
             `;
         }
-        
+
         optionsInfo += '</div></div>';
         resultInfo += optionsInfo;
     }
-    
+
     fileInfo.innerHTML += resultInfo;
-    
+
     // 히스토리에 추가
     addToHistory(data);
 }
@@ -300,12 +301,12 @@ function showImageComparison(data) {
     const processedPreview = document.getElementById('processedPreview');
     const originalInfo = document.getElementById('originalInfo');
     const processedInfo = document.getElementById('processedInfo');
-    
+
     // 원본 이미지 표시 (현재 미리보기에서 가져오기)
     const currentPreview = document.getElementById('previewImg');
     if (currentPreview && currentPreview.src) {
         originalPreview.src = currentPreview.src;
-        
+
         // 원본 정보
         if (data.original_format && data.original_size) {
             originalInfo.textContent = `${data.original_format} • ${data.original_size[0]} × ${data.original_size[1]}`;
@@ -313,18 +314,18 @@ function showImageComparison(data) {
             originalInfo.textContent = `${data.format} • ${data.size[0]} × ${data.size[1]}`;
         }
     }
-    
+
     // 처리된 이미지 표시
     const processedDataUrl = `data:image/${(data.processed_format || data.format || 'png').toLowerCase()};base64,${data.base64}`;
     processedPreview.src = processedDataUrl;
-    
+
     // 처리된 이미지 정보
     if (data.processed_format && data.processed_size) {
         processedInfo.textContent = `${data.processed_format} • ${data.processed_size[0]} × ${data.processed_size[1]}`;
     } else if (data.format && data.size) {
         processedInfo.textContent = `${data.format} • ${data.size[0]} × ${data.size[1]}`;
     }
-    
+
     imageComparison.style.display = 'block';
 }
 
@@ -334,7 +335,7 @@ function copyBase64() {
         showToast('복사할 Base64 데이터가 없습니다.', 'error');
         return;
     }
-    
+
     navigator.clipboard.writeText(currentBase64Data)
         .then(() => showToast('Base64 데이터가 클립보드에 복사되었습니다!', 'success'))
         .catch(() => showToast('복사에 실패했습니다.', 'error'));
@@ -346,7 +347,7 @@ function downloadBase64() {
         showToast('다운로드할 Base64 데이터가 없습니다.', 'error');
         return;
     }
-    
+
     const blob = new Blob([currentBase64Data], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -356,19 +357,19 @@ function downloadBase64() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     showToast('Base64 데이터가 다운로드되었습니다!', 'success');
 }
 
 // Base64 유효성 검사
 function validateBase64() {
     const base64Input = document.getElementById('base64Input').value.trim();
-    
+
     if (!base64Input) {
         showToast('Base64 데이터를 입력해주세요.', 'error');
         return;
     }
-    
+
     fetch('/api/validate-base64', {
         method: 'POST',
         headers: {
@@ -376,12 +377,12 @@ function validateBase64() {
         },
         body: JSON.stringify({ base64: base64Input })
     })
-    .then(response => response.json())
-    .then(data => {
-        const resultDiv = document.getElementById('base64ValidationResult');
-        
-        if (data.valid) {
-            resultDiv.innerHTML = `
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('base64ValidationResult');
+
+            if (data.valid) {
+                resultDiv.innerHTML = `
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i> 유효한 Base64 이미지 데이터입니다!
                     ${data.format ? `<br><strong>형식:</strong> ${data.format}` : ''}
@@ -389,33 +390,33 @@ function validateBase64() {
                     ${data.mode ? `<br><strong>모드:</strong> ${data.mode}` : ''}
                 </div>
             `;
-            
-            // 미리보기 표시
-            showBase64Preview(base64Input);
-        } else {
-            resultDiv.innerHTML = `
+
+                // 미리보기 표시
+                showBase64Preview(base64Input);
+            } else {
+                resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle"></i> ${data.error || '유효하지 않은 Base64 데이터입니다.'}
                 </div>
             `;
-            hideBase64Preview();
-        }
-        
-        resultDiv.style.display = 'block';
-    })
-    .catch(error => {
-        showToast('유효성 검사 중 오류가 발생했습니다: ' + error.message, 'error');
-    });
+                hideBase64Preview();
+            }
+
+            resultDiv.style.display = 'block';
+        })
+        .catch(error => {
+            showToast('유효성 검사 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
 }
 
 // Base64 미리보기 표시
 function showBase64Preview(base64Data) {
     const previewDiv = document.getElementById('base64Preview');
     const previewImg = document.getElementById('base64PreviewImg');
-    
+
     // data URL 형식으로 변환
     const dataUrl = base64Data.startsWith('data:') ? base64Data : `data:image/png;base64,${base64Data}`;
-    
+
     previewImg.src = dataUrl;
     previewDiv.style.display = 'block';
 }
@@ -430,44 +431,44 @@ function hideBase64Preview() {
 function convertFromBase64() {
     const base64Input = document.getElementById('base64Input').value.trim();
     const outputFormat = document.getElementById('outputFormat').value;
-    
+
     if (!base64Input) {
         showToast('Base64 데이터를 입력해주세요.', 'error');
         return;
     }
-    
+
     fetch('/api/convert/from-base64', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
             base64: base64Input,
             format: outputFormat
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.blob();
-    })
-    .then(blob => {
-        // 파일 다운로드
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `converted.${outputFormat.toLowerCase()}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showToast('이미지 변환이 완료되었습니다!', 'success');
-    })
-    .catch(error => {
-        showToast(error.error || '변환 중 오류가 발생했습니다.', 'error');
-    });
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // 파일 다운로드
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `converted.${outputFormat.toLowerCase()}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('이미지 변환이 완료되었습니다!', 'success');
+        })
+        .catch(error => {
+            showToast(error.error || '변환 중 오류가 발생했습니다.', 'error');
+        });
 }
 
 // 로딩 표시/숨김
@@ -481,9 +482,9 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('alertToast');
     const toastMessage = document.getElementById('toastMessage');
     const toastHeader = toast.querySelector('.toast-header');
-    
+
     toastMessage.textContent = message;
-    
+
     // 타입에 따른 스타일 적용
     toast.className = 'toast';
     if (type === 'success') {
@@ -493,7 +494,7 @@ function showToast(message, type = 'info') {
     } else {
         toast.classList.add('bg-info', 'text-white');
     }
-    
+
     const bsToast = new bootstrap.Toast(toast);
     bsToast.show();
 }
@@ -501,11 +502,11 @@ function showToast(message, type = 'info') {
 // 파일 크기 포맷팅
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -515,12 +516,12 @@ function initializeProcessingOptions() {
     const qualitySlider = document.getElementById('qualitySlider');
     const qualityValue = document.getElementById('qualityValue');
     const compressionLevel = document.getElementById('compressionLevel');
-    
-    qualitySlider.addEventListener('input', function() {
+
+    qualitySlider.addEventListener('input', function () {
         const value = this.value;
         qualityValue.textContent = value;
         processingOptions.quality = parseInt(value);
-        
+
         // 압축 레벨 표시 업데이트
         if (value >= 90) {
             compressionLevel.textContent = '최고 품질';
@@ -534,22 +535,22 @@ function initializeProcessingOptions() {
             compressionLevel.textContent = '최대 압축';
         }
     });
-    
+
     // 리사이징 입력 이벤트
-    document.getElementById('resizeWidth').addEventListener('input', function() {
+    document.getElementById('resizeWidth').addEventListener('input', function () {
         processingOptions.resize_width = this.value ? parseInt(this.value) : null;
     });
-    
-    document.getElementById('resizeHeight').addEventListener('input', function() {
+
+    document.getElementById('resizeHeight').addEventListener('input', function () {
         processingOptions.resize_height = this.value ? parseInt(this.value) : null;
     });
-    
-    document.getElementById('maintainAspectRatio').addEventListener('change', function() {
+
+    document.getElementById('maintainAspectRatio').addEventListener('change', function () {
         processingOptions.maintain_aspect_ratio = this.checked;
     });
-    
+
     // 포맷 선택 이벤트
-    document.getElementById('targetFormat').addEventListener('change', function() {
+    document.getElementById('targetFormat').addEventListener('change', function () {
         processingOptions.target_format = this.value || null;
     });
 }
@@ -563,7 +564,7 @@ function showProcessingOptions() {
 // 회전 설정
 function setRotation(angle) {
     processingOptions.rotation_angle = angle;
-    
+
     // 버튼 활성화 상태 업데이트
     document.querySelectorAll('[data-rotation]').forEach(btn => {
         btn.classList.remove('active');
@@ -574,7 +575,7 @@ function setRotation(angle) {
 // 뒤집기 토글
 function toggleFlip(direction) {
     const button = document.getElementById(`flip${direction.charAt(0).toUpperCase() + direction.slice(1)}`);
-    
+
     if (direction === 'horizontal') {
         processingOptions.flip_horizontal = !processingOptions.flip_horizontal;
         button.classList.toggle('active', processingOptions.flip_horizontal);
@@ -596,7 +597,7 @@ function resetProcessingOptions() {
         flip_horizontal: false,
         flip_vertical: false
     };
-    
+
     // UI 초기화
     document.getElementById('resizeWidth').value = '';
     document.getElementById('resizeHeight').value = '';
@@ -605,17 +606,17 @@ function resetProcessingOptions() {
     document.getElementById('qualityValue').textContent = '85';
     document.getElementById('compressionLevel').textContent = '보통';
     document.getElementById('targetFormat').value = '';
-    
+
     // 회전 버튼 초기화
     document.querySelectorAll('[data-rotation]').forEach(btn => {
         btn.classList.remove('active');
     });
     document.querySelector('[data-rotation="0"]').classList.add('active');
-    
+
     // 뒤집기 버튼 초기화
     document.getElementById('flipHorizontal').classList.remove('active');
     document.getElementById('flipVertical').classList.remove('active');
-    
+
     showToast('처리 옵션이 초기화되었습니다.', 'info');
 }
 
@@ -625,7 +626,7 @@ function applyProcessingOptions() {
         showToast('먼저 이미지 파일을 선택해주세요.', 'error');
         return;
     }
-    
+
     // 고급 변환 API 호출
     convertToBase64Advanced(currentFile, processingOptions);
 }
@@ -634,7 +635,7 @@ function applyProcessingOptions() {
 function initializeMultiFileHandling() {
     const multiDropZone = document.getElementById('multiDropZone');
     const multiFileInput = document.getElementById('multiFileInput');
-    
+
     // 클릭 이벤트
     multiDropZone.addEventListener('click', () => multiFileInput.click());
 
@@ -645,31 +646,31 @@ function initializeMultiFileHandling() {
             multiFileInput.click();
         }
     });
-    
+
     // 드래그 앤 드롭 이벤트
     multiDropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         multiDropZone.classList.add('dragover');
     });
-    
+
     multiDropZone.addEventListener('dragleave', () => {
         multiDropZone.classList.remove('dragover');
     });
-    
+
     multiDropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         multiDropZone.classList.remove('dragover');
-        
+
         const files = Array.from(e.dataTransfer.files);
         handleMultiFileSelection(files);
     });
-    
+
     // 파일 입력 이벤트
     multiFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
         handleMultiFileSelection(files);
     });
-    
+
     // 다중 파일 처리 옵션 초기화
     initializeMultiProcessingOptions();
 }
@@ -682,33 +683,33 @@ function handleMultiFileSelection(files) {
             showToast(`${file.name}은(는) 이미지 파일이 아닙니다.`, 'error');
             return false;
         }
-        
+
         // 파일 크기 검증 (16MB)
         if (file.size > 16 * 1024 * 1024) {
             showToast(`${file.name}의 크기가 16MB를 초과합니다.`, 'error');
             return false;
         }
-        
+
         // 중복 파일 검사
         if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
             showToast(`${file.name}은(는) 이미 선택된 파일입니다.`, 'error');
             return false;
         }
-        
+
         return true;
     });
-    
+
     if (validFiles.length === 0) {
         return;
     }
-    
+
     // 선택된 파일 목록에 추가
     selectedFiles.push(...validFiles);
-    
+
     // UI 업데이트
     updateFileList();
     showMultiProcessingOptions();
-    
+
     showToast(`${validFiles.length}개 파일이 추가되었습니다.`, 'success');
 }
 
@@ -717,15 +718,15 @@ function updateFileList() {
     const fileList = document.getElementById('fileList');
     const fileListContainer = document.getElementById('fileListContainer');
     const fileCount = document.getElementById('fileCount');
-    
+
     if (selectedFiles.length === 0) {
         fileList.style.display = 'none';
         return;
     }
-    
+
     fileList.style.display = 'block';
     fileCount.textContent = selectedFiles.length;
-    
+
     fileListContainer.innerHTML = selectedFiles.map((file, index) => `
         <div class="file-item border-bottom pb-2 mb-2" data-index="${index}">
             <div class="row align-items-center">
@@ -759,11 +760,11 @@ function removeFile(index) {
         const fileName = selectedFiles[index].name;
         selectedFiles.splice(index, 1);
         updateFileList();
-        
+
         if (selectedFiles.length === 0) {
             hideMultiProcessingOptions();
         }
-        
+
         showToast(`${fileName}이(가) 제거되었습니다.`, 'info');
     }
 }
@@ -794,12 +795,12 @@ function initializeMultiProcessingOptions() {
     const multiQualitySlider = document.getElementById('multiQualitySlider');
     const multiQualityValue = document.getElementById('multiQualityValue');
     const multiCompressionLevel = document.getElementById('multiCompressionLevel');
-    
-    multiQualitySlider.addEventListener('input', function() {
+
+    multiQualitySlider.addEventListener('input', function () {
         const value = this.value;
         multiQualityValue.textContent = value;
         multiProcessingOptions.quality = parseInt(value);
-        
+
         // 압축 레벨 표시 업데이트
         if (value >= 90) {
             multiCompressionLevel.textContent = '최고 품질';
@@ -813,22 +814,22 @@ function initializeMultiProcessingOptions() {
             multiCompressionLevel.textContent = '최대 압축';
         }
     });
-    
+
     // 리사이징 입력 이벤트
-    document.getElementById('multiResizeWidth').addEventListener('input', function() {
+    document.getElementById('multiResizeWidth').addEventListener('input', function () {
         multiProcessingOptions.resize_width = this.value ? parseInt(this.value) : null;
     });
-    
-    document.getElementById('multiResizeHeight').addEventListener('input', function() {
+
+    document.getElementById('multiResizeHeight').addEventListener('input', function () {
         multiProcessingOptions.resize_height = this.value ? parseInt(this.value) : null;
     });
-    
-    document.getElementById('multiMaintainAspectRatio').addEventListener('change', function() {
+
+    document.getElementById('multiMaintainAspectRatio').addEventListener('change', function () {
         multiProcessingOptions.maintain_aspect_ratio = this.checked;
     });
-    
+
     // 포맷 선택 이벤트
-    document.getElementById('multiTargetFormat').addEventListener('change', function() {
+    document.getElementById('multiTargetFormat').addEventListener('change', function () {
         multiProcessingOptions.target_format = this.value || null;
     });
 }
@@ -836,7 +837,7 @@ function initializeMultiProcessingOptions() {
 // 다중 파일 회전 설정
 function setMultiRotation(angle) {
     multiProcessingOptions.rotation_angle = angle;
-    
+
     // 버튼 활성화 상태 업데이트
     document.querySelectorAll('[data-multi-rotation]').forEach(btn => {
         btn.classList.remove('active');
@@ -847,7 +848,7 @@ function setMultiRotation(angle) {
 // 다중 파일 뒤집기 토글
 function toggleMultiFlip(direction) {
     const button = document.getElementById(`multiFlip${direction.charAt(0).toUpperCase() + direction.slice(1)}`);
-    
+
     if (direction === 'horizontal') {
         multiProcessingOptions.flip_horizontal = !multiProcessingOptions.flip_horizontal;
         button.classList.toggle('active', multiProcessingOptions.flip_horizontal);
@@ -869,7 +870,7 @@ function resetMultiProcessingOptions() {
         flip_horizontal: false,
         flip_vertical: false
     };
-    
+
     // UI 초기화
     document.getElementById('multiResizeWidth').value = '';
     document.getElementById('multiResizeHeight').value = '';
@@ -878,17 +879,17 @@ function resetMultiProcessingOptions() {
     document.getElementById('multiQualityValue').textContent = '85';
     document.getElementById('multiCompressionLevel').textContent = '보통';
     document.getElementById('multiTargetFormat').value = '';
-    
+
     // 회전 버튼 초기화
     document.querySelectorAll('[data-multi-rotation]').forEach(btn => {
         btn.classList.remove('active');
     });
     document.querySelector('[data-multi-rotation="0"]').classList.add('active');
-    
+
     // 뒤집기 버튼 초기화
     document.getElementById('multiFlipHorizontal').classList.remove('active');
     document.getElementById('multiFlipVertical').classList.remove('active');
-    
+
     showToast('다중 파일 처리 옵션이 초기화되었습니다.', 'info');
 }
 
@@ -898,48 +899,48 @@ function startBatchProcessing() {
         showToast('처리할 파일을 선택해주세요.', 'error');
         return;
     }
-    
+
     const formData = new FormData();
-    
+
     // 파일들 추가
     selectedFiles.forEach(file => {
         formData.append('files', file);
     });
-    
+
     // 처리 옵션 추가
     formData.append('options', JSON.stringify(multiProcessingOptions));
-    
+
     // UI 상태 변경
     showBatchProgress();
-    
+
     fetch('/api/convert/batch-start', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showToast(data.error, 'error');
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showToast(data.error, 'error');
+                hideBatchProgress();
+                return;
+            }
+
+            currentBatchId = data.queue_id;
+            showToast(data.message, 'success');
+
+            // 진행률 추적 시작
+            startProgressTracking();
+        })
+        .catch(error => {
+            showToast('배치 처리 시작 중 오류가 발생했습니다: ' + error.message, 'error');
             hideBatchProgress();
-            return;
-        }
-        
-        currentBatchId = data.queue_id;
-        showToast(data.message, 'success');
-        
-        // 진행률 추적 시작
-        startProgressTracking();
-    })
-    .catch(error => {
-        showToast('배치 처리 시작 중 오류가 발생했습니다: ' + error.message, 'error');
-        hideBatchProgress();
-    });
+        });
 }
 
 // 진행률 추적 시작
 function startProgressTracking() {
     if (!currentBatchId) return;
-    
+
     batchProgressInterval = setInterval(() => {
         fetch(`/api/convert/batch-progress/${currentBatchId}`)
             .then(response => response.json())
@@ -949,9 +950,9 @@ function startProgressTracking() {
                     showToast(data.error, 'error');
                     return;
                 }
-                
+
                 updateBatchProgress(data);
-                
+
                 // 완료된 경우 추적 중지
                 if (data.status === 'completed' || data.status === 'cancelled' || data.status === 'error') {
                     clearInterval(batchProgressInterval);
@@ -989,26 +990,26 @@ function updateBatchProgress(data) {
     const estimatedTime = document.getElementById('batchEstimatedTime');
     const successRate = document.getElementById('batchSuccessRate');
     const processingSpeed = document.getElementById('batchProcessingSpeed');
-    
+
     // 전체 진행률
     const percentage = Math.round((data.completed_files / data.total_files) * 100);
     progressBar.style.width = `${percentage}%`;
     progressText.textContent = `${percentage}%`;
-    
+
     // 현재 파일 진행률
     const currentFileProgress = data.current_file_progress || 0;
     currentFileProgressBar.style.width = `${currentFileProgress}%`;
     currentFileProgressText.textContent = `${Math.round(currentFileProgress)}%`;
-    
+
     // 상태 업데이트
     const statusText = getStatusText(data.status);
     progressStatus.textContent = statusText;
     progressStatus.className = `badge ${getStatusBadgeClass(data.status)}`;
-    
+
     // 파일 정보
     completedFiles.textContent = data.completed_files;
     totalFiles.textContent = data.total_files;
-    
+
     // 현재 파일명 (경로에서 파일명만 추출)
     if (data.current_file) {
         const fileName = data.current_file.split('/').pop() || data.current_file;
@@ -1016,14 +1017,14 @@ function updateBatchProgress(data) {
     } else {
         currentFile.textContent = '-';
     }
-    
+
     // 남은 시간
     if (data.estimated_time_remaining > 0) {
         estimatedTime.textContent = formatTime(data.estimated_time_remaining);
     } else {
         estimatedTime.textContent = '계산 중...';
     }
-    
+
     // 성공률
     if (data.success_rate !== undefined) {
         successRate.textContent = `${Math.round(data.success_rate * 100)}%`;
@@ -1034,7 +1035,7 @@ function updateBatchProgress(data) {
     } else {
         successRate.textContent = '-';
     }
-    
+
     // 처리 속도 (파일/분)
     if (data.start_time && data.completed_files > 0) {
         const elapsedTime = (Date.now() / 1000) - data.start_time;
@@ -1043,7 +1044,7 @@ function updateBatchProgress(data) {
     } else {
         processingSpeed.textContent = '-';
     }
-    
+
     // 상태에 따른 진행률 바 색상 변경
     progressBar.className = 'progress-bar progress-bar-striped';
     if (data.status === 'completed') {
@@ -1059,7 +1060,7 @@ function updateBatchProgress(data) {
         progressBar.classList.add('progress-bar-animated', 'bg-primary');
         currentFileProgressBar.className = 'progress-bar bg-info';
     }
-    
+
     // 처리 로그 업데이트
     updateProcessingLog(data);
 }
@@ -1079,11 +1080,11 @@ function getStatusBadgeClass(status) {
 // 처리 로그 업데이트
 function updateProcessingLog(data) {
     const processingLog = document.getElementById('processingLog');
-    
+
     // 새로운 로그 엔트리 생성
     const timestamp = new Date().toLocaleTimeString();
     let logEntry = '';
-    
+
     if (data.current_file && data.status === 'processing') {
         const fileName = data.current_file.split('/').pop() || data.current_file;
         logEntry = `[${timestamp}] 처리 중: ${fileName}`;
@@ -1094,17 +1095,17 @@ function updateProcessingLog(data) {
     } else if (data.status === 'cancelled') {
         logEntry = `[${timestamp}] ⏹️ 처리가 취소되었습니다`;
     }
-    
+
     if (logEntry) {
         // 기존 로그가 "처리 로그가 여기에 표시됩니다..."인 경우 제거
         if (processingLog.textContent.includes('처리 로그가 여기에 표시됩니다')) {
             processingLog.innerHTML = '';
         }
-        
+
         const logDiv = document.createElement('div');
         logDiv.textContent = logEntry;
         logDiv.className = 'mb-1';
-        
+
         // 상태에 따른 색상 적용
         if (data.status === 'completed') {
             logDiv.classList.add('text-success');
@@ -1113,12 +1114,12 @@ function updateProcessingLog(data) {
         } else if (data.status === 'cancelled') {
             logDiv.classList.add('text-warning');
         }
-        
+
         processingLog.appendChild(logDiv);
-        
+
         // 스크롤을 맨 아래로
         processingLog.scrollTop = processingLog.scrollHeight;
-        
+
         // 로그 엔트리가 너무 많으면 오래된 것 제거 (최대 50개)
         const logEntries = processingLog.children;
         if (logEntries.length > 50) {
@@ -1136,31 +1137,31 @@ function clearProcessingLog() {
 // 배치 처리 취소
 function cancelBatchProcessing() {
     if (!currentBatchId) return;
-    
+
     fetch(`/api/convert/batch-cancel/${currentBatchId}`, {
         method: 'DELETE'
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showToast(data.error, 'error');
-            return;
-        }
-        
-        clearInterval(batchProgressInterval);
-        showToast(data.message, 'info');
-        hideBatchProgress();
-    })
-    .catch(error => {
-        showToast('배치 처리 취소 중 오류가 발생했습니다: ' + error.message, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showToast(data.error, 'error');
+                return;
+            }
+
+            clearInterval(batchProgressInterval);
+            showToast(data.message, 'info');
+            hideBatchProgress();
+        })
+        .catch(error => {
+            showToast('배치 처리 취소 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
 }
 
 // 배치 결과 표시
 function showBatchResults(data) {
     const batchResults = document.getElementById('batchResults');
     const batchResultsContent = document.getElementById('batchResultsContent');
-    
+
     let resultsHtml = `
         <div class="row mb-3">
             <div class="col-md-6">
@@ -1181,7 +1182,7 @@ function showBatchResults(data) {
             </div>
         </div>
     `;
-    
+
     if (data.successful_results && data.successful_results.length > 0) {
         resultsHtml += `
             <h6><i class="fas fa-check-circle text-success"></i> 성공한 파일들</h6>
@@ -1209,7 +1210,7 @@ function showBatchResults(data) {
             </div>
         `;
     }
-    
+
     if (data.failed_file_details && data.failed_file_details.length > 0) {
         resultsHtml += `
             <h6 class="mt-3"><i class="fas fa-exclamation-triangle text-danger"></i> 실패한 파일들</h6>
@@ -1233,7 +1234,7 @@ function showBatchResults(data) {
             </div>
         `;
     }
-    
+
     resultsHtml += `
         <div class="mt-3 text-center">
             <button class="btn btn-primary" onclick="downloadBatchResults()">
@@ -1244,7 +1245,7 @@ function showBatchResults(data) {
             </button>
         </div>
     `;
-    
+
     batchResultsContent.innerHTML = resultsHtml;
     batchResults.style.display = 'block';
 }
@@ -1295,12 +1296,12 @@ function formatTime(seconds) {
 function initializeHistoryAndCache() {
     // 로컬 스토리지에서 히스토리 로드
     loadHistoryFromStorage();
-    
+
     // 캐시 상태 초기화
     refreshCacheStatus();
-    
+
     // 탭 변경 시 히스토리 새로고침
-    document.getElementById('history-tab').addEventListener('shown.bs.tab', function() {
+    document.getElementById('history-tab').addEventListener('shown.bs.tab', function () {
         refreshHistory();
         refreshCacheStatus();
     });
@@ -1349,16 +1350,16 @@ function addToHistory(data) {
         base64Data: data.base64.substring(0, 1000) + '...', // 처음 1000자만 저장
         thumbnail: data.base64.substring(0, 500) // 썸네일용 데이터
     };
-    
+
     conversionHistory.unshift(historyItem);
-    
+
     // 최대 50개 항목만 유지
     if (conversionHistory.length > 50) {
         conversionHistory = conversionHistory.slice(0, 50);
     }
-    
+
     saveHistoryToStorage();
-    
+
     // 히스토리 탭이 활성화되어 있으면 UI 업데이트
     if (document.getElementById('history-tab').classList.contains('active')) {
         refreshHistory();
@@ -1368,7 +1369,7 @@ function addToHistory(data) {
 // 히스토리 새로고침
 function refreshHistory() {
     const historyList = document.getElementById('historyList');
-    
+
     if (conversionHistory.length === 0) {
         historyList.innerHTML = `
             <div class="text-center text-muted py-4">
@@ -1379,7 +1380,7 @@ function refreshHistory() {
         `;
         return;
     }
-    
+
     historyList.innerHTML = conversionHistory.map(item => `
         <div class="history-item border-bottom pb-3 mb-3" data-id="${item.id}">
             <div class="row align-items-center">
@@ -1435,14 +1436,14 @@ function reprocessFromHistory(historyId) {
         showToast('히스토리 항목을 찾을 수 없습니다.', 'error');
         return;
     }
-    
+
     // 단일 파일 탭으로 이동
     document.getElementById('to-base64-tab').click();
-    
+
     // 처리 옵션 복원
     if (item.processingOptions) {
         const options = item.processingOptions;
-        
+
         // 옵션 값 설정
         document.getElementById('resizeWidth').value = options.resize_width || '';
         document.getElementById('resizeHeight').value = options.resize_height || '';
@@ -1450,10 +1451,10 @@ function reprocessFromHistory(historyId) {
         document.getElementById('qualitySlider').value = options.quality;
         document.getElementById('qualityValue').textContent = options.quality;
         document.getElementById('targetFormat').value = options.target_format || '';
-        
+
         // 전역 옵션 객체 업데이트
         processingOptions = { ...options };
-        
+
         // 회전/뒤집기 버튼 상태 복원
         setRotation(options.rotation_angle);
         if (options.flip_horizontal) {
@@ -1462,7 +1463,7 @@ function reprocessFromHistory(historyId) {
         if (options.flip_vertical) {
             toggleFlip('vertical');
         }
-        
+
         showToast('처리 옵션이 복원되었습니다. 새 이미지를 선택해주세요.', 'info');
     } else {
         showToast('기본 변환 모드로 설정되었습니다. 새 이미지를 선택해주세요.', 'info');
@@ -1476,7 +1477,7 @@ function viewHistoryDetails(historyId) {
         showToast('히스토리 항목을 찾을 수 없습니다.', 'error');
         return;
     }
-    
+
     let detailsHtml = `
         <div class="modal fade" id="historyDetailsModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
@@ -1507,7 +1508,7 @@ function viewHistoryDetails(historyId) {
                             </div>
                         </div>
     `;
-    
+
     if (item.processingOptions) {
         const options = item.processingOptions;
         detailsHtml += `
@@ -1532,7 +1533,7 @@ function viewHistoryDetails(historyId) {
             </div>
         `;
     }
-    
+
     detailsHtml += `
                     </div>
                     <div class="modal-footer">
@@ -1545,13 +1546,13 @@ function viewHistoryDetails(historyId) {
             </div>
         </div>
     `;
-    
+
     // 기존 모달 제거
     const existingModal = document.getElementById('historyDetailsModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // 새 모달 추가 및 표시
     document.body.insertAdjacentHTML('beforeend', detailsHtml);
     const modal = new bootstrap.Modal(document.getElementById('historyDetailsModal'));
@@ -1588,16 +1589,16 @@ function updateCacheStatusDisplay() {
     document.getElementById('cacheHitCount').textContent = cacheStatus.hitCount;
     document.getElementById('cacheMissCount').textContent = cacheStatus.missCount;
     document.getElementById('cacheItemCount').textContent = cacheStatus.itemCount;
-    
+
     const usagePercentage = (cacheStatus.usedSize / cacheStatus.maxSize) * 100;
     document.getElementById('cacheUsageBar').style.width = `${usagePercentage}%`;
-    document.getElementById('cacheUsageText').textContent = 
+    document.getElementById('cacheUsageText').textContent =
         `${formatFileSize(cacheStatus.usedSize)} / ${formatFileSize(cacheStatus.maxSize)}`;
-    
+
     const totalRequests = cacheStatus.hitCount + cacheStatus.missCount;
     const hitRate = totalRequests > 0 ? (cacheStatus.hitCount / totalRequests) * 100 : 0;
     document.getElementById('cacheHitRate').textContent = `${Math.round(hitRate)}%`;
-    
+
     // 사용량에 따른 진행률 바 색상 변경
     const usageBar = document.getElementById('cacheUsageBar');
     usageBar.className = 'progress-bar';
@@ -1616,19 +1617,19 @@ function clearExpiredCache() {
     fetch('/api/cache/cleanup-expired', {
         method: 'POST'
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showToast(data.error, 'error');
-            return;
-        }
-        
-        showToast(`${data.cleaned_items || 0}개의 만료된 캐시 항목이 정리되었습니다.`, 'success');
-        refreshCacheStatus();
-    })
-    .catch(error => {
-        showToast('캐시 정리 중 오류가 발생했습니다: ' + error.message, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showToast(data.error, 'error');
+                return;
+            }
+
+            showToast(`${data.cleaned_items || 0}개의 만료된 캐시 항목이 정리되었습니다.`, 'success');
+            refreshCacheStatus();
+        })
+        .catch(error => {
+            showToast('캐시 정리 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
 }
 
 // 모든 캐시 삭제
@@ -1637,27 +1638,27 @@ function clearAllCache() {
         fetch('/api/cache/clear-all', {
             method: 'POST'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                showToast(data.error, 'error');
-                return;
-            }
-            
-            cacheStatus = {
-                hitCount: 0,
-                missCount: 0,
-                usedSize: 0,
-                maxSize: cacheStatus.maxSize,
-                itemCount: 0
-            };
-            
-            updateCacheStatusDisplay();
-            showToast('모든 캐시가 삭제되었습니다.', 'success');
-        })
-        .catch(error => {
-            showToast('캐시 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast(data.error, 'error');
+                    return;
+                }
+
+                cacheStatus = {
+                    hitCount: 0,
+                    missCount: 0,
+                    usedSize: 0,
+                    maxSize: cacheStatus.maxSize,
+                    itemCount: 0
+                };
+
+                updateCacheStatusDisplay();
+                showToast('모든 캐시가 삭제되었습니다.', 'success');
+            })
+            .catch(error => {
+                showToast('캐시 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
+            });
     }
 }
 
@@ -1665,22 +1666,22 @@ function clearAllCache() {
 function updateCacheSettings() {
     const maxSize = parseInt(document.getElementById('cacheMaxSize').value);
     const expiry = parseInt(document.getElementById('cacheExpiry').value);
-    
+
     if (maxSize < 10 || maxSize > 1000) {
         showToast('캐시 크기는 10MB에서 1000MB 사이여야 합니다.', 'error');
         return;
     }
-    
+
     if (expiry < 1 || expiry > 168) {
         showToast('캐시 만료 시간은 1시간에서 168시간(7일) 사이여야 합니다.', 'error');
         return;
     }
-    
+
     const settings = {
         max_size_mb: maxSize,
         expiry_hours: expiry
     };
-    
+
     fetch('/api/cache/settings', {
         method: 'POST',
         headers: {
@@ -1688,18 +1689,183 @@ function updateCacheSettings() {
         },
         body: JSON.stringify(settings)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showToast(data.error, 'error');
-            return;
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showToast(data.error, 'error');
+                return;
+            }
+
+            cacheStatus.maxSize = maxSize * 1024 * 1024; // MB to bytes
+            updateCacheStatusDisplay();
+            showToast('캐시 설정이 업데이트되었습니다.', 'success');
+        })
+        .catch(error => {
+            showToast('캐시 설정 업데이트 중 오류가 발생했습니다: ' + error.message, 'error');
+        });
+}
+
+// ============================================
+// 이미지 포맷 변환 기능
+// ============================================
+
+let convertCurrentFile = null;
+
+// 이미지 포맷 변환 초기화
+function initializeImageConversion() {
+    const convertDropZone = document.getElementById('convertDropZone');
+    const convertFileInput = document.getElementById('convertFileInput');
+
+    if (!convertDropZone || !convertFileInput) {
+        return; // 요소가 없으면 초기화하지 않음
+    }
+
+    // 클릭 이벤트
+    convertDropZone.addEventListener('click', () => convertFileInput.click());
+
+    // 키보드 이벤트
+    convertDropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            convertFileInput.click();
         }
-        
-        cacheStatus.maxSize = maxSize * 1024 * 1024; // MB to bytes
-        updateCacheStatusDisplay();
-        showToast('캐시 설정이 업데이트되었습니다.', 'success');
-    })
-    .catch(error => {
-        showToast('캐시 설정 업데이트 중 오류가 발생했습니다: ' + error.message, 'error');
     });
+
+    // 드래그 앤 드롭 이벤트
+    convertDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        convertDropZone.classList.add('dragover');
+    });
+
+    convertDropZone.addEventListener('dragleave', () => {
+        convertDropZone.classList.remove('dragover');
+    });
+
+    convertDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        convertDropZone.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleConvertFileSelection(files[0]);
+        }
+    });
+
+    // 파일 입력 이벤트
+    convertFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleConvertFileSelection(e.target.files[0]);
+        }
+    });
+}
+
+// 이미지 변환 파일 선택 처리
+function handleConvertFileSelection(file) {
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+        showToast('이미지 파일만 선택할 수 있습니다.', 'error');
+        return;
+    }
+
+    // 파일 크기 검증 (16MB)
+    if (file.size > 16 * 1024 * 1024) {
+        showToast('파일 크기는 16MB를 초과할 수 없습니다.', 'error');
+        return;
+    }
+
+    // 현재 파일 저장
+    convertCurrentFile = file;
+
+    // 미리보기 표시
+    showConvertImagePreview(file);
+
+    // 변환 옵션 표시
+    showConvertOptions();
+}
+
+// 이미지 변환 미리보기 표시
+function showConvertImagePreview(file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const previewImg = document.getElementById('convertPreviewImg');
+        const fileInfo = document.getElementById('convertFileInfo');
+
+        previewImg.src = e.target.result;
+
+        // 파일 정보 표시
+        const img = new Image();
+        img.onload = function () {
+            fileInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>파일명:</strong> ${file.name}<br>
+                        <strong>크기:</strong> ${formatFileSize(file.size)}<br>
+                        <strong>타입:</strong> ${file.type}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>이미지 크기:</strong> ${img.width} × ${img.height}<br>
+                        <strong>수정일:</strong> ${new Date(file.lastModified).toLocaleString()}
+                    </div>
+                </div>
+            `;
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// 변환 옵션 표시
+function showConvertOptions() {
+    document.getElementById('convertOptions').style.display = 'block';
+}
+
+// 이미지 포맷 변환 및 다운로드
+function convertImageFormat() {
+    if (!convertCurrentFile) {
+        showToast('먼저 이미지 파일을 선택해주세요.', 'error');
+        return;
+    }
+
+    const targetFormat = document.getElementById('convertTargetFormat').value;
+
+    const formData = new FormData();
+    formData.append('file', convertCurrentFile);
+    formData.append('target_format', targetFormat);
+
+    showLoading(true);
+
+    fetch('/api/convert/image', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            showLoading(false);
+
+            // 파일 다운로드
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // 원본 파일명에서 확장자를 제거하고 새 확장자 추가
+            const originalName = convertCurrentFile.name.replace(/\.[^/.]+$/, '');
+            a.download = `${originalName}_converted.${targetFormat.toLowerCase()}`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`${targetFormat} 포맷으로 변환이 완료되었습니다!`, 'success');
+        })
+        .catch(error => {
+            showLoading(false);
+            const errorMessage = error.error || error.message || '변환 중 오류가 발생했습니다.';
+            showToast(errorMessage, 'error');
+        });
 }

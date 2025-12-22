@@ -125,6 +125,22 @@ class WebHandlers:
         result = self._handle_request(self._clear_cache_impl)
         return self._format_response(result)
 
+    def convert_image_format(self) -> Any:
+        """
+        Handle image format conversion requests (Image to Image).
+
+        Returns:
+            File response or JSON error response
+        """
+        result = self._handle_request(self._convert_image_format_impl)
+
+        if result.is_success:
+            # Return file for successful conversion
+            return result.value
+        else:
+            # Return JSON error response
+            return self._format_error_response(result.error)
+
     def _handle_request(self, handler_func) -> Result:
         """
         Generic request handler that wraps business logic with error handling.
@@ -398,6 +414,66 @@ class WebHandlers:
             return Result.failure(
                 ProcessingError(f"캐시 삭제 중 오류가 발생했습니다: {str(e)}")
             )
+
+    def _convert_image_format_impl(self) -> Result:
+        """
+        Implementation of Image to Image conversion.
+
+        Returns:
+            Result containing file response or error
+        """
+        # Validate request
+        if "file" not in request.files:
+            return Result.failure(ValidationError("파일이 선택되지 않았습니다."))
+
+        file = request.files["file"]
+        if file.filename == "":
+            return Result.failure(ValidationError("파일이 선택되지 않았습니다."))
+
+        target_format = request.form.get("target_format", "PNG").upper()
+
+        # Save to temporary file
+        temp_file_path = self._save_uploaded_file(file)
+
+        try:
+            # Open image and convert
+            with Image.open(temp_file_path) as image:
+                # Convert mode if necessary (e.g., RGBA to RGB for JPEG)
+                if target_format == "JPEG" and image.mode in ("RGBA", "LA"):
+                    background = Image.new("RGB", image.size, (255, 255, 255))
+                    background.paste(image, mask=image.split()[-1])
+                    image = background
+                elif target_format != "Unknown":
+                    # For other formats, ensure compatible mode
+                    if image.mode == "P" and target_format not in ["PNG", "GIF"]:
+                        image = image.convert("RGB")
+
+                # Save to buffer
+                img_io = BytesIO()
+                image.save(img_io, format=target_format, quality=90)
+                img_io.seek(0)
+
+                # Create filename
+                original_name = os.path.splitext(file.filename)[0]
+                download_name = f"{original_name}_converted.{target_format.lower()}"
+
+                # Create file response
+                file_response = send_file(
+                    img_io,
+                    mimetype=f"image/{target_format.lower()}",
+                    as_attachment=True,
+                    download_name=download_name,
+                )
+
+                return Result.success(file_response)
+
+        except Exception as e:
+            return Result.failure(
+                ProcessingError(f"이미지 변환 중 오류가 발생했습니다: {str(e)}")
+            )
+        finally:
+            # Clean up temporary file
+            self._cleanup_temp_file(temp_file_path)
 
     def _save_uploaded_file(self, file: FileStorage) -> str:
         """

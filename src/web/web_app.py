@@ -90,6 +90,12 @@ def convert_to_base64_advanced():
     return web_handlers.convert_to_base64_advanced()
 
 
+@app.route("/api/convert/image", methods=["POST"])
+def convert_image_format():
+    """이미지 포맷 변환 (리팩토링된 핸들러 사용)"""
+    return web_handlers.convert_image_format()
+
+
 @app.route("/api/convert/batch-start", methods=["POST"])
 def batch_start():
     """다중 파일 배치 처리 시작"""
