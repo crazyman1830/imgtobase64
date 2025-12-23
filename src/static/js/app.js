@@ -590,12 +590,12 @@ function setRotation(angle) {
     // ⚡ Performance: Use cached button selectors instead of querying DOM every time
     if (cachedRotationButtons) {
         cachedRotationButtons.forEach(btn => {
-            btn.classList.remove('active');
+            if (btn.dataset.rotation == angle) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         });
-        const activeButton = document.querySelector(`[data-rotation="${angle}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
     }
 }
 
@@ -634,17 +634,8 @@ function resetProcessingOptions() {
     document.getElementById('compressionLevel').textContent = '보통';
     document.getElementById('targetFormat').value = '';
 
-    // ⚡ Performance: Use cached button selectors
-    // 회전 버튼 초기화
-    if (cachedRotationButtons) {
-        cachedRotationButtons.forEach(btn => {
-            btn.classList.remove('active');
-        });
-        const defaultButton = document.querySelector('[data-rotation="0"]');
-        if (defaultButton) {
-            defaultButton.classList.add('active');
-        }
-    }
+    // ⚡ Performance: Use cached button selectors via helper
+    setRotation(0);
 
     // 뒤집기 버튼 초기화
     document.getElementById('flipHorizontal').classList.remove('active');
@@ -877,12 +868,12 @@ function setMultiRotation(angle) {
     // ⚡ Performance: Use cached button selectors instead of querying DOM every time
     if (cachedMultiRotationButtons) {
         cachedMultiRotationButtons.forEach(btn => {
-            btn.classList.remove('active');
+            if (btn.dataset.multiRotation == angle) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         });
-        const activeButton = document.querySelector(`[data-multi-rotation="${angle}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
     }
 }
 
@@ -921,17 +912,8 @@ function resetMultiProcessingOptions() {
     document.getElementById('multiCompressionLevel').textContent = '보통';
     document.getElementById('multiTargetFormat').value = '';
 
-    // ⚡ Performance: Use cached button selectors
-    // 회전 버튼 초기화
-    if (cachedMultiRotationButtons) {
-        cachedMultiRotationButtons.forEach(btn => {
-            btn.classList.remove('active');
-        });
-        const defaultButton = document.querySelector('[data-multi-rotation="0"]');
-        if (defaultButton) {
-            defaultButton.classList.add('active');
-        }
-    }
+    // ⚡ Performance: Use cached button selectors via helper
+    setMultiRotation(0);
 
     // 뒤집기 버튼 초기화
     document.getElementById('multiFlipHorizontal').classList.remove('active');
