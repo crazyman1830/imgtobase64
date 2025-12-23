@@ -1,6 +1,7 @@
 // 전역 변수
 let currentBase64Data = '';
 let currentFile = null;
+let currentPreviewUrl = null; // ⚡ Performance: Track object URL for cleanup
 let processingOptions = {
     resize_width: null,
     resize_height: null,
@@ -128,30 +129,37 @@ function handleFileSelection(file) {
 
 // 이미지 미리보기 표시
 function showImagePreview(file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const previewImg = document.getElementById('previewImg');
-        const imagePreview = document.getElementById('imagePreview');
-        const fileInfo = document.getElementById('fileInfo');
+    // ⚡ Performance: Use URL.createObjectURL instead of FileReader
+    // FileReader reads the entire file into memory as a base64 string, which blocks the main thread
+    // for large images. URL.createObjectURL is synchronous and virtually instant.
 
-        previewImg.src = e.target.result;
-        imagePreview.style.display = 'block';
+    // Cleanup previous object URL to prevent memory leaks
+    if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+        currentPreviewUrl = null;
+    }
 
-        // 파일 정보 표시
-        fileInfo.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <strong>파일명:</strong> ${file.name}<br>
-                    <strong>크기:</strong> ${formatFileSize(file.size)}<br>
-                    <strong>타입:</strong> ${file.type}
-                </div>
-                <div class="col-md-6">
-                    <strong>수정일:</strong> ${new Date(file.lastModified).toLocaleString()}
-                </div>
+    const previewImg = document.getElementById('previewImg');
+    const imagePreview = document.getElementById('imagePreview');
+    const fileInfo = document.getElementById('fileInfo');
+
+    currentPreviewUrl = URL.createObjectURL(file);
+    previewImg.src = currentPreviewUrl;
+    imagePreview.style.display = 'block';
+
+    // 파일 정보 표시
+    fileInfo.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <strong>파일명:</strong> ${file.name}<br>
+                <strong>크기:</strong> ${formatFileSize(file.size)}<br>
+                <strong>타입:</strong> ${file.type}
             </div>
-        `;
-    };
-    reader.readAsDataURL(file);
+            <div class="col-md-6">
+                <strong>수정일:</strong> ${new Date(file.lastModified).toLocaleString()}
+            </div>
+        </div>
+    `;
 }
 
 // Base64 변환 (기본)
