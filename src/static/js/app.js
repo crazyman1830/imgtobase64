@@ -341,8 +341,22 @@ function copyBase64() {
         return;
     }
 
+    const btn = document.getElementById('btnCopyBase64');
+    const originalHtml = btn.innerHTML;
+
     navigator.clipboard.writeText(currentBase64Data)
-        .then(() => showToast('Base64 데이터가 클립보드에 복사되었습니다!', 'success'))
+        .then(() => {
+            showToast('Base64 데이터가 클립보드에 복사되었습니다!', 'success');
+
+            // Micro-interaction: Change button state
+            btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+            btn.classList.replace('btn-primary', 'btn-success');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('btn-success', 'btn-primary');
+            }, 2000);
+        })
         .catch(() => showToast('복사에 실패했습니다.', 'error'));
 }
 
